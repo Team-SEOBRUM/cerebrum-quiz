@@ -190,9 +190,9 @@
     const total = window.QUESTIONS.length;
     let counts, n;
     if (sessions) {
-      counts = [3, 5, 7, 10].filter((c) => c * SESSIONS <= total);
+      counts = [3, 5, 7, 10, 15].filter((c) => c * SESSIONS <= total);
       if (!counts.length) counts = [Math.max(1, Math.floor(total / SESSIONS))];
-      n = counts.includes(5) ? 5 : counts[counts.length - 1];
+      n = counts.includes(15) ? 15 : counts[counts.length - 1];
     } else {
       counts = [10, 15, 20].filter((c) => c < total).concat([total]);
       n = counts[0];

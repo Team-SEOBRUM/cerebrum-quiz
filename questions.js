@@ -1,185 +1,299 @@
-// Bank soal Cerebrum Quiz
-// Sumber: Product Knowledge Center — Team SEOBRUM (product-knowledge-center.netlify.app)
+// Bank soal Cerebrum Quiz — set 3 (50 soal, cukup untuk 3 sesi × 15 soal)
+// Sumber: Product Knowledge Center — Team SEOBRUM (product-knowledge-center.netlify.app),
+//         disusun dari dokumen Riset & Kurikulum Seleksi PT Cerebrum Edukanesia Nusantara (2026).
 // Format: { q: "pertanyaan", a: ["opsi1","opsi2",...], c: indexJawabanBenar, f: "fun fact (opsional)" }
 // Soal Benar/Salah cukup pakai 2 opsi.
 
 window.QUESTIONS = [
+  // ---------- Perusahaan & ekosistem ----------
   {
-    q: "Aplikasi Cerebrum membantu kamu bersiap untuk apa?",
-    a: ["Masuk PTN (SNBT/UTBK, TKA & Ujian Mandiri)", "Seleksi CPNS", "Seleksi TNI", "Tes TOEFL"],
+    q: "PT Cerebrum Edukanesia Nusantara berdiri sejak tahun…",
+    a: ["2018", "2012", "2021", "2015"],
     c: 0,
-    f: "Cerebrum fokus pada persiapan masuk Perguruan Tinggi Negeri."
+    f: "Rekam jejak sejak 2018 sebagai perusahaan edutech Indonesia."
   },
   {
-    q: "Apa nama perusahaan induk di balik Cerebrum?",
-    a: ["PT Cerebrum Indonesia Jaya", "PT Cerebrum Edukanesia Nusantara", "PT Edukasi Nusantara Cerdas", "PT Bimbel Online Indonesia"],
-    c: 1,
-    f: "Situs resminya ada di Cerebrumcorp.id."
-  },
-  {
-    q: "Sudah berapa tahun pengalaman Cerebrum mendampingi pejuang PTN?",
-    a: ["1 tahun", "3 tahun", "8 tahun", "15 tahun"],
-    c: 2,
-    f: "8 tahun — salah satu platform paling senior di ekosistem Cerebrum!"
-  },
-  {
-    q: "Kira-kira berapa jumlah bank soal di Cerebrum?",
-    a: ["Sekitar 500 soal", "Sekitar 2.000 soal", "27.813 soal", "1 juta soal"],
-    c: 2,
-    f: "Ada 27.813 soal siap dilatih."
-  },
-  {
-    q: "Berapa jumlah pengguna Cerebrum?",
-    a: ["70 ribu lebih", "100 orang", "500 orang", "Belum ada"],
+    q: "Cerebrum disebut telah mengakselerasi akses belajar bagi lebih dari … siswa di seluruh Indonesia.",
+    a: ["3 juta", "300 ribu", "30 ribu", "30 juta"],
     c: 0,
-    f: "70k+ pengguna sudah belajar bareng Cerebrum."
+    f: "Angka 3 juta siswa ini juga diberitakan RRI."
   },
   {
-    q: "Fitur simulasi ujian dengan sistem CAT, timer otomatis & ranking disebut…",
-    a: ["Flashcard", "Tryout", "Kalender", "Latsol"],
-    c: 1,
-    f: "Tryout dibuat semirip mungkin dengan ujian asli."
-  },
-  {
-    q: "\"Latsol\" di Cerebrum adalah singkatan dari…",
-    a: ["Latihan Solo", "Latihan Soal", "Lanjut Solusi", "Lapor Soal"],
-    c: 1,
-    f: "Latsol = Latihan Soal harian yang singkat per materi."
-  },
-  {
-    q: "Fitur kelas online langsung bersama mentor berpengalaman bernama…",
-    a: ["Live Class", "Tracking Belajar", "Fitur Free", "Peta Belajar"],
+    q: "Siapa CEO PT Cerebrum Edukanesia Nusantara?",
+    a: ["Aditya Pratama Ghifary", "Alif Hijriah", "Rizky Ananda Putra", "Dimas Prasetyo"],
     c: 0,
-    f: "Di Live Class kamu bisa tanya jawab langsung dengan mentor."
+    f: "Memimpin bersama founder Alif Hijriah."
   },
   {
-    q: "Kalau berhalangan ikut Live Class, apa yang bisa dilakukan?",
-    a: ["Tidak bisa apa-apa", "Tonton rekaman kelasnya", "Harus daftar ulang", "Minta uang kembali"],
-    c: 1,
-    f: "Live Class menyediakan rekaman, jadi nggak takut ketinggalan."
-  },
-  {
-    q: "Fitur kartu belajar ringkas untuk menghafal konsep & rumus disebut…",
-    a: ["Scorecard", "Flashcard", "Giftcard", "Postcard"],
-    c: 1,
-    f: "Flashcard bikin hafalan rumus jadi lebih cepat."
-  },
-  {
-    q: "Fitur untuk melihat posisimu dibanding peserta lain se-Indonesia adalah…",
-    a: ["Kalender", "Ranking Nilai Nasional", "Materi", "Fitur Free"],
-    c: 1,
-    f: "Ranking Nasional membantu mengukur peluang lolos secara nyata."
-  },
-  {
-    q: "Di fitur Materi Cerebrum, apa saja yang tersedia?",
-    a: ["Video, PDF, e-book & flashcard", "Hanya buku cetak", "Hanya podcast", "Game online"],
+    q: "Cerebrum menaungi sekitar berapa aplikasi bimbel online?",
+    a: ["15", "5", "50", "150"],
     c: 0,
-    f: "Pustaka Materi lengkap untuk belajar cepat maupun mendalam."
+    f: "Mulai dari PTN, ASN, TNI/Polri, BUMN, keuangan, hingga beasiswa."
   },
   {
-    q: "Setiap soal Tryout Cerebrum dilengkapi dengan…",
-    a: ["Kunci jawaban saja", "Video pembahasan per soal & PDF pembahasan", "Tidak ada pembahasan", "Stiker lucu"],
-    c: 1,
-    f: "Ada video pembahasan per soal + PDF pembahasan lengkap."
-  },
-  {
-    q: "Apa manfaat utama fitur Peta Belajar Terstruktur?",
-    a: ["Tidak bingung harus mulai belajar dari mana", "Bisa main game", "Dapat diskon belanja", "Bisa chatting dengan teman"],
-    c: 0,
-    f: "Belajar dibimbing langkah demi langkah, dari konsep sampai soal lanjut."
-  },
-  {
-    q: "Fitur Kalender di Cerebrum berguna untuk…",
-    a: ["Melihat jadwal belajar, live class & tryout", "Melihat cuaca", "Menghitung nilai rapor", "Memesan tiket"],
-    c: 0,
-    f: "Semua jadwal dalam satu tampilan agar persiapan tetap on-track."
-  },
-  {
-    q: "Fitur untuk memantau progres belajar (materi selesai, skor, kelemahan) adalah…",
-    a: ["Tracking Belajar", "Flashcard", "Live Class", "Bank Soal"],
-    c: 0,
-    f: "Tracking Belajar menunjukkan bagian mana yang perlu diperbaiki."
-  },
-  {
-    q: "Apa itu \"Fitur Free\" di Cerebrum?",
-    a: ["Akses materi & latihan pilihan secara gratis", "Free ongkir", "Free pulsa", "Libur belajar"],
-    c: 0,
-    f: "Mulai belajar tanpa hambatan dengan Fitur Free."
-  },
-  {
-    q: "UTBK terdiri dari dua kelompok tes: Tes Potensi Skolastik (TPS) dan…",
-    a: ["Tes Fisik", "Tes Literasi", "Tes Wawancara", "Tes Kesehatan"],
-    c: 1,
-    f: "Tes Literasi mencakup Literasi B. Indonesia, B. Inggris & Penalaran Matematika."
-  },
-  {
-    q: "TPS adalah singkatan dari…",
-    a: ["Tes Potensi Skolastik", "Tes Pintar Siswa", "Tes Pilihan Sekolah", "Tes Prestasi Sains"],
+    q: "Misi besar PT Cerebrum Edukanesia Nusantara adalah menjadi…",
+    a: ["Pemimpin edutech di Indonesia", "Toko buku terbesar", "Kampus swasta terbesar", "Penerbit soal ujian negara"],
     c: 0
   },
   {
-    q: "TKA adalah singkatan dari…",
-    a: ["Tes Kemampuan Akademik", "Tes Kecerdasan Anak", "Tes Kelas Akhir", "Tes Komputer Asli"],
+    q: "Persiapan rekrutmen TNI di ekosistem Cerebrum dilayani oleh…",
+    a: ["JadiPrajurit", "JadiPolisi", "JadiSekdin", "JadiBUMN"],
     c: 0,
-    f: "TKA adalah asesmen terstandar berbasis komputer dari pemerintah."
+    f: "Untuk Polri ada JadiPolisi."
   },
   {
-    q: "Maksimal berapa program studi yang boleh dipilih di SNBT?",
-    a: ["1", "2", "4", "10"],
-    c: 2,
-    f: "Maksimal 4 prodi, dan urutannya menunjukkan prioritas."
-  },
-  {
-    q: "Peserta SNBT boleh ikut UTBK 2026 sebanyak…",
-    a: ["1 kali", "2 kali", "3 kali", "Sepuasnya"],
+    q: "Platform untuk persiapan rekrutmen Otoritas Jasa Keuangan adalah…",
+    a: ["JadiOJK", "JadiPCPM", "JadiBUMN", "JadiASN"],
     c: 0,
-    f: "Cuma sekali — makanya latihan Tryout itu penting!"
+    f: "Program OJK antara lain PCS, PCT, dan PCAM."
   },
   {
-    q: "Pada soal Pilihan Ganda UTBK, jawaban yang salah akan…",
-    a: ["Mengurangi poin", "Tidak mengurangi poin", "Membuat ujian gagal", "Dikali dua"],
-    c: 1,
-    f: "Jawaban salah atau kosong tidak mengurangi poin."
-  },
-  {
-    q: "Mata uji WAJIB di TKA adalah…",
-    a: ["Bahasa Indonesia, Matematika, Bahasa Inggris", "Fisika, Kimia, Biologi", "Sejarah, Geografi, Ekonomi", "Olahraga & Seni"],
+    q: "JadiPCPM disiapkan untuk seleksi PCPM di lembaga…",
+    a: ["Bank Indonesia", "OJK", "Kementerian Keuangan", "BUMN"],
     c: 0,
-    f: "Ditambah 2 mata uji pilihan sesuai minat."
+    f: "PCPM = Pendidikan Calon Pegawai Muda. Angkatan 41 dibuka 2026."
   },
   {
-    q: "Berapa lama durasi satu sesi kelas Cerebrum?",
-    a: ["15 menit", "60 menit", "3 jam", "Seharian"],
-    c: 1,
-    f: "Satu sesi 60 menit: materi, diskusi, tanya jawab, lalu latihan di LMS."
-  },
-  {
-    q: "Belajar \"synchronous\" di Cerebrum artinya…",
-    a: ["Belajar langsung real-time lewat Zoom/Google Meet", "Belajar sendiri tanpa guru", "Belajar lewat surat", "Belajar sambil tidur"],
+    q: "JadiAffiliate dalam ekosistem Cerebrum adalah…",
+    a: ["Program afiliasi untuk mempromosikan produk Cerebrum", "Aplikasi bimbel CPNS", "Kelas bahasa Inggris", "Bank soal SNBT"],
     c: 0,
-    f: "Asynchronous = lewat video pembelajaran yang bisa ditonton kapan saja."
+    f: "Bukan platform belajar — mitra mendapat komisi dari rujukan."
   },
   {
-    q: "Benar atau Salah: Siswa yang sudah lulus SNBP boleh ikut SNBT di tahun yang sama.",
+    q: "Benar atau Salah: JadiNakes sekarang masih berupa aplikasi bimbel seleksi tenaga kesehatan.",
     a: ["Benar", "Salah"],
     c: 1,
-    f: "Yang sudah lulus SNBP 2024–2026 tidak dapat mengikuti SNBT 2026."
+    f: "JadiNakes kini menjadi situs web informasi kesehatan."
   },
   {
-    q: "Benar atau Salah: Tryout Cerebrum memakai sistem CAT seperti ujian asli.",
-    a: ["Benar", "Salah"],
+    q: "soalsnbt.com, soalcpnsterbaru.com & soalpppkterbaru.com berfungsi sebagai…",
+    a: ["Situs web bank soal yang melengkapi platform utama", "Situs pendaftaran resmi pemerintah", "Media sosial Cerebrum", "Aplikasi kasir"],
     c: 0
   },
   {
-    q: "Selain Cerebrum, platform di ekosistem yang sama untuk persiapan CPNS adalah…",
-    a: ["JadiASN", "JadiPrajurit", "TOEFL Academy", "JagoTPA"],
-    c: 0,
-    f: "Ekosistem Cerebrum punya 21 platform & program!"
+    q: "Dokumen riset & kurikulum di Product Knowledge Center disusun oleh tim…",
+    a: ["Product Management", "Keuangan", "Legal", "Customer Service"],
+    c: 0
+  },
+
+  // ---------- Fitur belajar (berlaku untuk semua produk Cerebrum) ----------
+  {
+    q: "Manfaat utama Peta Belajar Terstruktur adalah…",
+    a: ["Tidak bingung harus mulai belajar dari mana", "Bisa chat dengan teman", "Dapat diskon paket", "Bisa main game"],
+    c: 0
   },
   {
-    q: "Apa tagline Team SEOBRUM di Product Knowledge Center?",
-    a: ["From #MissionZEROPossible to #BeNumberONE", "Just Do It", "Belajar Itu Mahal", "Santai Dulu Aja"],
+    q: "Tryout Cerebrum memberi analisa hasil berupa…",
+    a: ["Kelebihan, kelemahan & fokus perbaikan", "Ramalan zodiak", "Jadwal libur", "Rekomendasi film"],
+    c: 0
+  },
+  {
+    q: "Latsol paling cocok untuk siapa?",
+    a: ["Yang sibuk tapi ingin tetap konsisten belajar", "Yang hanya mau belajar sebulan sekali", "Yang hanya ingin menonton video", "Yang tidak ingin latihan soal"],
     c: 0,
-    f: "#MissionZEROPossible → #BeNumberONE 🚀"
+    f: "Latihan singkat per materi, bisa dikerjakan tiap hari."
+  },
+  {
+    q: "Live Class Cerebrum juga disebut…",
+    a: ["Mentoring Interaktif", "Kelas Malam", "Webinar Pasif", "Kelas Offline"],
+    c: 0,
+    f: "Bisa tanya langsung ke mentor + ada rekaman kelas."
+  },
+  {
+    q: "Fitur Materi Cerebrum punya julukan…",
+    a: ["Pustaka Materi Lengkap", "Gudang Video Lucu", "Galeri Foto", "Kamus Kilat"],
+    c: 0
+  },
+  {
+    q: "Kartu belajar ringkas untuk menghafal konsep & rumus penting disebut…",
+    a: ["Flashcard", "Kalender", "Ranking", "Tracking"],
+    c: 0
+  },
+  {
+    q: "Rangkaian fitur Peta Belajar, Tryout CAT, Latsol, Materi & Live Class berlaku untuk…",
+    a: ["Seluruh produk Cerebrum", "Hanya JadiASN", "Hanya pengguna premium TNI", "Hanya TOEFL Academy"],
+    c: 0
+  },
+
+  // ---------- SNBT / UTBK 2026 ----------
+  {
+    q: "Berapa maksimal program studi yang boleh dipilih peserta SNBT 2026?",
+    a: ["4", "2", "6", "10"],
+    c: 0,
+    f: "Bisa di PTN Akademik dan/atau PTN Vokasi."
+  },
+  {
+    q: "Subtes Penalaran Umum (PU) UTBK 2026 terdiri dari berapa soal?",
+    a: ["30 soal", "20 soal", "45 soal", "15 soal"],
+    c: 0,
+    f: "3 komponen @10 soal: induktif, deduktif, kuantitatif."
+  },
+  {
+    q: "Subtes UTBK dengan waktu paling lama (42,5 menit) adalah…",
+    a: ["Literasi Bahasa Indonesia & Penalaran Matematika", "Pengetahuan Kuantitatif", "Literasi Bahasa Inggris", "Penalaran Umum"],
+    c: 0
+  },
+  {
+    q: "Subtes PPU (Pengetahuan dan Pemahaman Umum) diberi waktu…",
+    a: ["15 menit", "30 menit", "45 menit", "60 menit"],
+    c: 0,
+    f: "20 soal dalam 15 menit — harus gesit!"
+  },
+  {
+    q: "Tipe soal UTBK 2026 yang jawabannya diisi angka/huruf tanpa pilihan opsi adalah…",
+    a: ["Isian Singkat (Rumpang)", "Pilihan Ganda", "Majemuk Kompleks", "Esai panjang"],
+    c: 0
+  },
+  {
+    q: "Soal pilihan ganda UTBK 2026 memiliki berapa opsi jawaban?",
+    a: ["5 (A–E)", "4 (A–D)", "3 (A–C)", "6 (A–F)"],
+    c: 0
+  },
+  {
+    q: "Target skor minimal pada simulasi internal kurikulum SNBT Cerebrum adalah…",
+    a: ["615", "500", "800", "450"],
+    c: 0,
+    f: "Ini target belajar internal, bukan passing grade resmi."
+  },
+  {
+    q: "Benar atau Salah: Siswa yang sudah lulus SNBP 2025 boleh ikut SNBT 2026.",
+    a: ["Benar", "Salah"],
+    c: 1,
+    f: "Lulusan SNBP 2024, 2025 & 2026 tidak dapat mengikuti SNBT 2026."
+  },
+  {
+    q: "Peserta SNBT yang memilih prodi Seni dan/atau Olahraga wajib mengunggah…",
+    a: ["Portofolio", "Surat rekomendasi dosen", "Sertifikat TOEFL", "Foto keluarga"],
+    c: 0
+  },
+  {
+    q: "Usia maksimal lulusan 2024/2025 untuk ikut SNBT 2026 (per 1 Juli 2026) adalah…",
+    a: ["25 tahun", "21 tahun", "30 tahun", "19 tahun"],
+    c: 0
+  },
+  {
+    q: "Sebelum mendaftar SNBT, calon peserta wajib memiliki…",
+    a: ["Akun SNPMB Siswa", "Akun SSCASN", "Kartu BPJS", "SIM"],
+    c: 0
+  },
+  {
+    q: "Selain SNBP & SNBT, jalur masuk PTN yang diselenggarakan masing-masing kampus disebut…",
+    a: ["Ujian Mandiri", "Ujian Nasional", "Jalur Undangan BUMN", "SKD"],
+    c: 0
+  },
+  {
+    q: "Hasil TKA berfungsi antara lain untuk…",
+    a: ["Validasi nilai rapor untuk seleksi masuk PT (mis. SNBP)", "Menentukan kelulusan SMA", "Syarat membuat KTP", "Seleksi CPNS"],
+    c: 0,
+    f: "Nilai TKA tidak menentukan kelulusan siswa dari sekolah."
+  },
+
+  // ---------- CPNS, PPPK, PPG, Sekdin ----------
+  {
+    q: "SKD CPNS terdiri dari 110 soal yang dikerjakan dalam waktu…",
+    a: ["100 menit", "60 menit", "180 menit", "45 menit"],
+    c: 0,
+    f: "TWK 30, TIU 35, TKP 45 soal."
+  },
+  {
+    q: "Subtes SKD CPNS dengan jumlah soal terbanyak (45 soal) adalah…",
+    a: ["TKP", "TWK", "TIU", "SKB"],
+    c: 0,
+    f: "TKP = Tes Karakteristik Pribadi."
+  },
+  {
+    q: "Bobot penilaian akhir CPNS antara SKD dan SKB adalah…",
+    a: ["SKD 40% : SKB 60%", "SKD 50% : SKB 50%", "SKD 70% : SKB 30%", "SKD 100%"],
+    c: 0
+  },
+  {
+    q: "Huruf \"B\" pada nilai dasar ASN BerAKHLAK adalah…",
+    a: ["Berorientasi Pelayanan", "Bertanggung Jawab", "Berintegritas", "Bersemangat"],
+    c: 0,
+    f: "BerAKHLAK: Berorientasi Pelayanan, Akuntabel, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif."
+  },
+  {
+    q: "Kurikulum JadiPPPK 2026 menyiapkan seleksi PPPK untuk…",
+    a: ["Sekolah Rakyat", "Rumah Sakit Swasta", "Bank Swasta", "Perusahaan Startup"],
+    c: 0,
+    f: "Guru & Tenaga Kependidikan Sekolah Rakyat."
+  },
+  {
+    q: "Sistem resmi yang dirujuk kurikulum Program PPG 2026 adalah…",
+    a: ["SIMPKB", "SSCASN", "Portal SNPMB", "FHCI"],
+    c: 0,
+    f: "SIMPKB = Sistem Informasi Manajemen Pengembangan Keprofesian Berkelanjutan."
+  },
+  {
+    q: "JadiSekdin menyiapkan peserta untuk berapa instansi sekolah kedinasan?",
+    a: ["9", "3", "15", "20"],
+    c: 0,
+    f: "Antara lain PKN STAN, IPDN, STIS, STMKG, STIN & Poltek SSN."
+  },
+  {
+    q: "Polstat STIS adalah sekolah kedinasan di bawah…",
+    a: ["BPS", "BMKG", "BIN", "Kemenkeu"],
+    c: 0,
+    f: "STMKG di bawah BMKG, STIN di bawah BIN, PKN STAN di bawah Kemenkeu."
+  },
+
+  // ---------- BUMN, TNI/Polri, Bank & keuangan ----------
+  {
+    q: "Penyelenggara Rekrutmen Bersama BUMN (RBB) adalah…",
+    a: ["Forum Human Capital Indonesia (FHCI)", "BKN", "Kemendikbud", "OJK"],
+    c: 0
+  },
+  {
+    q: "Tes AKHLAK pada RBB BUMN terdiri dari berapa soal?",
+    a: ["90 soal", "10 soal", "25 soal", "200 soal"],
+    c: 0,
+    f: "AKHLAK: Amanah, Kompeten, Harmonis, Loyal, Adaptif, Kolaboratif."
+  },
+  {
+    q: "Tes Bahasa Inggris & Learning Agility pada RBB BUMN termasuk tes tahap ke…",
+    a: ["2", "1", "3", "4"],
+    c: 0,
+    f: "Tahap 1: TKD, AKHLAK, Wawasan Kebangsaan. Tahap 3: TKB oleh BUMN."
+  },
+  {
+    q: "Kurikulum seleksi TNI Cerebrum mencakup tiga jalur, yaitu…",
+    a: ["Taruna Akademi, Bintara, Tamtama", "Kopral, Sersan, Mayor", "AD, AL, AU saja", "Akpol, SIPSS, Bintara"],
+    c: 0,
+    f: "Di tiga matra: AD, AL, dan AU."
+  },
+  {
+    q: "Akpol adalah jalur seleksi untuk menjadi…",
+    a: ["Taruna Akademi Kepolisian", "Tamtama TNI AL", "Pegawai OJK", "Guru PPPK"],
+    c: 0
+  },
+  {
+    q: "PCPM Bank Indonesia Angkatan 41 dibuka untuk berapa program studi?",
+    a: ["21", "5", "41", "100"],
+    c: 0
+  },
+
+  // ---------- Akademik lanjutan & beasiswa ----------
+  {
+    q: "TPA Bappenas terdiri dari tiga subtes: Verbal, Kuantitatif, dan…",
+    a: ["Penalaran", "Bahasa Inggris", "Wawasan Kebangsaan", "Psikotes"],
+    c: 0
+  },
+  {
+    q: "Skala skor total TPA Bappenas adalah…",
+    a: ["200–800", "0–100", "1–10", "310–677"],
+    c: 0,
+    f: "Tiap subtes 20–80; total 250 soal dalam 180 menit."
+  },
+  {
+    q: "Dua komponen seleksi beasiswa LPDP yang disiapkan kurikulum Cerebrum adalah…",
+    a: ["Tes Bakat Skolastik & SJT", "SKD & SKB", "TWK & TIU", "UTBK & TKA"],
+    c: 0,
+    f: "SJT = Situational Judgement Test (tes kepribadian situasional)."
+  },
+  {
+    q: "PsikotesKerja.id membantu peserta berlatih untuk…",
+    a: ["Tes psikologi pada seleksi kerja", "Ujian SIM", "Tes kesehatan", "Ujian sekolah"],
+    c: 0,
+    f: "Mis. deret angka, analogi verbal, silogisme, spasial."
   }
 ];
