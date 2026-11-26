@@ -14,7 +14,7 @@ Ada juga **🎯 Main Solo** untuk latihan sendiri tanpa PIN.
 
 ## Teknologi
 - HTML + CSS + JavaScript murni (tanpa build).
-- Koneksi realtime host ↔ pemain lewat broker MQTT publik di WebSocket aman (`wss://`, EMQX dengan cadangan HiveMQ) — `net.js` + `assets/mqtt.min.js` (mqtt.js, MIT). Jalan di data seluler maupun Wi-Fi kantor, **tidak butuh server/database**. Host berperan sebagai "server" — **tab host harus tetap terbuka** selama game.
+- Koneksi realtime host ↔ pemain lewat broker MQTT publik di WebSocket aman port 443 (`wss://public.cloud.shiftr.io`, cadangan EMQX & HiveMQ) — `net.js` + `assets/mqtt.min.js` (mqtt.js, MIT). Jalan di data seluler maupun Wi-Fi kantor, **tidak butuh server/database**. Host berperan sebagai "server" — **tab host harus tetap terbuka** selama game.
 - Bisa di-hosting statis (Vercel).
 
 ## Ubah / tambah soal

@@ -38,8 +38,12 @@
   }
 
   // Siapkan soal: acak urutan soal & opsi (kecuali soal Benar/Salah)
+  // Soal ditandai "en: true" (bahasa Inggris) selalu ikut; sisanya diambil acak, lalu semuanya diacak lagi
   function buildDeck(n) {
-    return shuffle(window.QUESTIONS).slice(0, n).map((q) => {
+    const all = window.QUESTIONS;
+    const must = shuffle(all.filter((q) => q.en)).slice(0, n);
+    const rest = shuffle(all.filter((q) => !q.en)).slice(0, Math.max(0, n - must.length));
+    return shuffle(must.concat(rest)).map((q) => {
       if (q.a.length < 4) return { ...q };
       const order = shuffle(q.a.map((_, i) => i));
       return { ...q, a: order.map((i) => q.a[i]), c: order.indexOf(q.c) };
@@ -275,7 +279,7 @@
         if (p.conn === conn) {
           p.online = false; p.conn = null;
           if (this.phase === "lobby") { this.players.delete(p.key); this.drawPlayers(); }
-          else this.checkAllAnswered();
+          else { this.drawAnswered(); this.checkAllAnswered(); }
         }
       }
     },
@@ -299,7 +303,7 @@
         this.players.set(key, p);
         conn.send({ t: "joined", ok: true, name: p.name, av: p.av, score: p.score, started: this.phase !== "lobby" });
         if (this.phase === "lobby") { Sfx.join(); this.drawPlayers(); }
-        else if (this.phase === "question" && !this.answers.has(key)) this.send(p, this.questionMsg());
+        else if (this.phase === "question" && !this.answers.has(key)) { this.send(p, this.questionMsg()); this.drawAnswered(); }
         return;
       }
       if (msg.t === "answer") {
@@ -311,6 +315,7 @@
         this.send(p, { t: "ack" });
         Sfx.tick();
         const el = document.getElementById("ansNum"); if (el) el.textContent = this.answers.size;
+        this.drawAnswered();
         this.checkAllAnswered();
       }
     },
@@ -419,10 +424,12 @@
           <div class="q-brain" aria-hidden="true"></div>
           <div class="ans-count"><b id="ansNum">0</b>Jawaban</div>
         </div>
+        <div class="answered" id="answered"></div>
         ${answerButtons(q)}
         <div class="q-progress">Sesi ${s + 1} · Soal ${(this.qi % this.perSess) + 1}/${this.perSess} · Poin ×${SESS[s].mult} · PIN ${this.pin}</div>
         <div class="host-actions"><button class="btn white" id="nextBtn">Lewati ⏭</button></div>`);
       document.getElementById("nextBtn").onclick = () => this.reveal();
+      this.drawAnswered();
       this.onlinePlayers().forEach((p) => this.send(p, this.questionMsg()));
       Sfx.go();
       this.stopTimer = countdown(this.time, (left) => {
@@ -430,6 +437,17 @@
         t.textContent = left; t.classList.toggle("low", left <= 5);
         if (left <= 5 && left > 0) Sfx.tickLow();
       }, () => this.reveal());
+    },
+    // Panel host: siapa yang sudah menjawab (tanpa membocorkan jawabannya)
+    drawAnswered() {
+      const box = document.getElementById("answered"); if (!box || this.phase !== "question") return;
+      const list = [...this.players.values()].filter((p) => p.online || this.answers.has(p.key));
+      const done = list.filter((p) => this.answers.has(p.key))
+        .sort((a, b) => this.answers.get(a.key).elapsed - this.answers.get(b.key).elapsed);
+      const wait = list.filter((p) => !this.answers.has(p.key));
+      box.innerHTML = `
+        <div class="answered-head"><b>Sudah jawab ${done.length}/${list.length}</b><span>${wait.length ? `Menunggu ${wait.length} pemain…` : "Semua sudah jawab ✓"}</span></div>
+        <div class="answered-list">${done.map((p, i) => `<span class="ap done" title="Sudah jawab">${i === 0 ? "⚡" : "✓"} ${esc(p.av)} ${esc(p.name)} <small>${this.answers.get(p.key).elapsed.toFixed(1)}s</small></span>`).join("")}${wait.map((p) => `<span class="ap" title="Belum jawab">${esc(p.av)} ${esc(p.name)}</span>`).join("")}</div>`;
     },
     checkAllAnswered() {
       if (this.phase !== "question") return;

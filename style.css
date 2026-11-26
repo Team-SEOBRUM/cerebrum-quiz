@@ -328,3 +328,12 @@ input { font-family: inherit; }
   .lb-row { padding: 10px 12px; gap: 8px; }
   .st td, .st th { padding: 8px 6px; }
 }
+
+/* Panel host: siapa yang sudah menjawab */
+.answered { padding: 0 14px 12px; }
+.answered-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+.answered-head b { color: var(--fg); font-family: var(--head); font-stretch: 112%; }
+.answered-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 18vh; overflow-y: auto; }
+.ap { padding: 6px 12px; background: var(--bg-3); border: 1px solid var(--line); color: var(--muted); font-weight: 700; font-size: 15px; opacity: .6; clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px); }
+.ap.done { background: var(--accent); color: var(--ink); border-color: var(--accent); opacity: 1; animation: pop .3s cubic-bezier(.3,1.6,.6,1); }
+.ap small { font-weight: 600; opacity: .7; margin-left: 2px; }

@@ -1,4 +1,4 @@
-// Bank soal Cerebrum Quiz — set 3 (50 soal, cukup untuk 3 sesi × 15 soal)
+// Bank soal Cerebrum Quiz — set 3 (50 soal + 5 soal bahasa Inggris, cukup untuk 3 sesi × 15 soal)
 // Sumber: Product Knowledge Center — Team SEOBRUM (product-knowledge-center.netlify.app),
 //         disusun dari dokumen Riset & Kurikulum Seleksi PT Cerebrum Edukanesia Nusantara (2026).
 // Format: { q: "pertanyaan", a: ["opsi1","opsi2",...], c: indexJawabanBenar, f: "fun fact (opsional)" }
@@ -295,5 +295,43 @@ window.QUESTIONS = [
     a: ["Tes psikologi pada seleksi kerja", "Ujian SIM", "Tes kesehatan", "Ujian sekolah"],
     c: 0,
     f: "Mis. deret angka, analogi verbal, silogisme, spasial."
+  },
+
+  // ---------- English questions (selalu ikut di setiap game) ----------
+  {
+    en: true,
+    q: "Which platform in the Cerebrum ecosystem helps you prepare for the TOEFL test?",
+    a: ["TOEFL Academy", "JadiBUMN", "JadiSekdin", "PsikotesKerja.id"],
+    c: 0,
+    f: "TOEFL Academy is for anyone who needs a TOEFL score for study, scholarships or work."
+  },
+  {
+    en: true,
+    q: "Which Cerebrum feature offers short, per-topic practice you can do every day?",
+    a: ["Latsol (Daily Practice)", "Live Class", "Ranking", "Calendar"],
+    c: 0,
+    f: "Perfect for busy learners who want to stay consistent."
+  },
+  {
+    en: true,
+    q: "How many questions are in the English Literacy subtest of UTBK 2026?",
+    a: ["20 questions", "30 questions", "10 questions", "50 questions"],
+    c: 0,
+    f: "20 questions in 20 minutes."
+  },
+  {
+    en: true,
+    q: "In Cerebrum's Tryout, what does \"CAT\" stand for?",
+    a: ["Computer Assisted Test", "Creative Academic Training", "Cerebrum Answer Tool", "Class Assessment Timer"],
+    c: 0,
+    f: "Tryouts are designed to feel like the real computer-based exam."
+  },
+  {
+    en: true,
+    q: "Cerebrum students complete their practice assignments in the LMS. What does LMS stand for?",
+    a: ["Learning Management System", "Live Mentoring Session", "Lesson Memory Storage", "Learning Mobile Site"],
+    c: 0,
+    f: "Every 60-minute class ends with practice questions in the LMS."
   }
+
 ];

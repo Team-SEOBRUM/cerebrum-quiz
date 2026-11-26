@@ -14,10 +14,13 @@
   "use strict";
 
   // Broker dicoba berurutan; host & pemain memakai urutan yang sama.
-  const BROKERS = window.CQ_BROKERS || [
+  // Utama: shiftr.io di port 443 (port HTTPS standar) — tidak diblokir Wi-Fi kantor/kampus
+  // atau operator seluler. Port 8084/8884 milik broker cadangan sering diblokir.
+  const BROKERS = (window.CQ_BROKERS || [
+    { url: "wss://public.cloud.shiftr.io", username: "public", password: "public" },
     "wss://broker.emqx.io:8084/mqtt",
     "wss://broker.hivemq.com:8884/mqtt",
-  ];
+  ]).map((b) => (typeof b === "string" ? { url: b } : b));
   const NS = "seobrum/cerebrum-quiz/v2/";
   const PING_MS = 6000;          // pemain kirim detak tiap 6 detik
   const HOST_TIMEOUT_MS = 25000; // host anggap pemain putus kalau 25 detik tanpa kabar
@@ -38,9 +41,12 @@
     if (typeof window.mqtt === "undefined") { onFail(new Error("mqtt lib missing")); return; }
     if (i >= BROKERS.length) { onFail(new Error("no broker")); return; }
     let settled = false;
-    const client = window.mqtt.connect(BROKERS[i], {
+    const b = BROKERS[i];
+    const client = window.mqtt.connect(b.url, {
       clientId: "cq_" + rid(), clean: true, keepalive: 20, connectTimeout: 7000,
-      reconnectPeriod: 0, protocolVersion: 4, ...opts,
+      reconnectPeriod: 0, protocolVersion: 4,
+      ...(b.username ? { username: b.username, password: b.password } : {}),
+      ...opts,
     });
     const fail = () => {
       if (settled) return; settled = true;
