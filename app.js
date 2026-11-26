@@ -7,7 +7,7 @@
 
   // ---------- Konstanta ----------
   const PREFIX = "cbrquiz-v1-";
-  const SHAPES = ["▲", "◆", "●", "■"];
+  const SHAPES = ["A", "B", "C", "D"];
   const AVATARS = ["🦊", "🐼", "🐯", "🐸", "🐵", "🦁", "🐧", "🐙", "🦄", "🐨", "🐶", "🐱"];
   const PEER_OPTS = {
     debug: 0,
@@ -106,7 +106,7 @@
   function confetti(duration = 3500) {
     const c = document.getElementById("confetti"), ctx = c.getContext("2d");
     c.width = innerWidth; c.height = innerHeight;
-    const colors = ["#e21b3c", "#1368ce", "#d89e00", "#26890c", "#ffffff", "#ffd23f"];
+    const colors = ["#d4ff3a", "#ffffff", "#d4ff3a", "#9b9b9b", "#ffffff"];
     const parts = Array.from({ length: 160 }, () => ({
       x: Math.random() * c.width, y: -20 - Math.random() * c.height * .5,
       w: 6 + Math.random() * 8, h: 8 + Math.random() * 10, vy: 2 + Math.random() * 4,
@@ -142,6 +142,26 @@
       </${clickable ? "button" : "div"}>`).join("")}</div>`;
   }
 
+  // Papan peringkat ringkas untuk HP: top N + baris "kamu" kalau di luar top N
+  function boardRows(sorted, me, n) {
+    const row = (x, i) => ({ r: i + 1, n: x.name, av: x.av, sc: x.score, mv: x.move || 0, me: x === me, gap: i > 0 ? sorted[i - 1].score - x.score : null });
+    const rows = sorted.slice(0, n).map(row);
+    const idx = sorted.indexOf(me);
+    if (idx >= n) rows.push(row(me, idx));
+    return rows;
+  }
+  function boardHtml(rows) {
+    let prev = 0, out = "";
+    for (const x of rows || []) {
+      if (x.r > prev + 1) out += `<div class="lb-sep">• • •</div>`;
+      prev = x.r;
+      const mv = x.mv > 0 ? `<span class="mv up">▲${x.mv}</span>` : x.mv < 0 ? `<span class="mv down">▼${-x.mv}</span>` : `<span class="mv same">•</span>`;
+      const gap = x.gap == null ? `<small class="lb-gap lead">Memimpin</small>` : x.gap === 0 ? `<small class="lb-gap">Seri</small>` : `<small class="lb-gap">−${x.gap}</small>`;
+      out += `<div class="lb-row${x.me ? " me" : ""}"><span class="lb-rank">${x.r}</span><span class="lb-name">${esc(x.av)} ${esc(x.n)}${x.me ? " · kamu" : ""}</span>${mv}<span class="lb-right"><span class="lb-score">${x.sc}</span>${gap}</span></div>`;
+    }
+    return `<div class="lb">${out}</div>`;
+  }
+
   // =========================================================
   //  HOME
   // =========================================================
@@ -149,14 +169,17 @@
     Music.stop();
     render(`
       <div class="center">
-        <h1 class="logo">Cerebrum Quiz 🧠<small>Seberapa kenal kamu dengan aplikasi Cerebrum?</small></h1>
+        <img class="brand" src="assets/seobrum-logo.png" alt="SEOBRUM" />
+        <div class="kicker">Product Knowledge Battle</div>
+        <h1 class="logo">Cerebrum <span class="hl">Quiz</span><small>Seberapa kenal kamu dengan aplikasi Cerebrum?</small></h1>
         <form class="card" id="pinForm" autocomplete="off">
-          <input class="input" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="PIN Game" value="${esc(prefillPin)}" aria-label="PIN Game" />
-          <button class="btn" type="submit">Masuk</button>
+          <b>Masukkan PIN room</b>
+          <input class="input" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" value="${esc(prefillPin)}" aria-label="PIN room" />
+          <button class="btn" type="submit">Masuk →</button>
         </form>
         <div class="row">
-          <button class="btn white" id="hostBtn">🎤 Jadi Host</button>
-          <button class="btn white" id="soloBtn">🎯 Main Solo</button>
+          <button class="btn white" id="hostBtn">Jadi Host</button>
+          <button class="btn outline" id="soloBtn">Main Solo</button>
         </div>
         <p class="foot">Host buka game di layar besar, pemain masukkan PIN di HP masing-masing. Materi soal dari Product Knowledge Center — Team SEOBRUM.</p>
       </div>`);
@@ -199,7 +222,7 @@
           <div class="chips" id="tm">${[10, 20, 30].map((s) => `<button class="chip${s === t ? " on" : ""}" data-v="${s}">${s} detik</button>`).join("")}</div>
           <button class="btn green" id="go">${btnLabel}</button>
         </div>
-        <button class="btn ghost" id="back">← Kembali</button>
+        <button class="btn ghost" id="back">← Kembali ke beranda</button>
       </div>`);
     const bindChips = (id, set) => document.querySelectorAll(`#${id} .chip`).forEach((b) => b.onclick = () => {
       document.querySelectorAll(`#${id} .chip`).forEach((x) => x.classList.remove("on"));
@@ -219,7 +242,7 @@
     phase: "lobby", answers: new Map(), qStart: 0, stopTimer: null, nQ: 15, perSess: 5, lastPrev: null,
 
     setup() {
-      settingsCard("Buat Room 🎤", "Buat Room", (n, t) => { this.perSess = n; this.nQ = n * SESSIONS; this.time = t; this.open(); }, { sessions: true });
+      settingsCard("Buat <span class=\"hl\">Room</span>", "Buat Room →", (n, t) => { this.perSess = n; this.nQ = n * SESSIONS; this.time = t; this.open(); }, { sessions: true });
     },
     sess(qi = this.qi) { return Math.min(SESSIONS - 1, Math.floor(Math.max(0, qi) / this.perSess)); },
 
@@ -309,14 +332,15 @@
       const host = location.host || "cerebrum-quiz";
       render(`
         <div class="topbar">
-          <div class="pin-label"><b>Buka di HP:</b>${esc(host)}</div>
-          <div class="pin-label"><b>PIN Game:</b><span class="pin-big" id="pinBig">${this.pin.slice(0, 3)} ${this.pin.slice(3)}</span></div>
+          <img class="brand" src="assets/seobrum-logo.png" alt="SEOBRUM" />
+          <div class="pin-label"><b>Buka di HP</b>${esc(host)}</div>
+          <div class="pin-label"><b>PIN Room</b><span class="pin-big" id="pinBig">${this.pin.slice(0, 3)} ${this.pin.slice(3)}</span></div>
           <div id="qr" title="Scan untuk gabung"></div>
         </div>
         <div class="lobby-mid">
-          <div class="count-badge">👥 <span id="pCount">0</span></div>
-          <h1 class="logo" style="font-size:clamp(28px,5vw,48px)">Cerebrum Quiz 🧠</h1>
-          <button class="btn white" id="nextBtn" disabled>Mulai ▶</button>
+          <div class="count-badge"><span id="pCount">0</span> pemain</div>
+          <h1 class="logo" style="font-size:clamp(26px,4.4vw,46px)">Cerebrum <span class="hl">Quiz</span></h1>
+          <button class="btn green" id="nextBtn" disabled>Mulai →</button>
         </div>
         <div id="players"></div>
         <p class="foot" style="margin:auto auto 16px;text-align:center">Klik nama pemain untuk mengeluarkannya. ${SESSIONS} sesi × ${this.perSess} soal · ${this.time} detik/soal</p>`);
@@ -403,7 +427,7 @@
         <div class="q-head">${esc(q.q)}</div>
         <div class="q-mid">
           <div class="timer" id="timer">${this.time}</div>
-          <div class="q-brain">🧠</div>
+          <div class="q-brain" aria-hidden="true"></div>
           <div class="ans-count"><b id="ansNum">0</b>Jawaban</div>
         </div>
         ${answerButtons(q)}
@@ -458,7 +482,7 @@
           score: p.score, rank: rank(p), total: sorted.length, streak: p.streak, move: p.move, mult, s,
           behind: ahead ? { name: ahead.name, gap: ahead.score - p.score } : null,
           chaser: idx === 0 && behindMe ? { name: behindMe.name, gap: p.score - behindMe.score } : null,
-          right: q.a[q.c],
+          right: q.a[q.c], board: boardRows(sorted, p, 5), qn: (this.qi % this.perSess) + 1, per: this.perSess,
         });
       }
       const max = Math.max(1, ...counts);
@@ -467,8 +491,8 @@
         <div class="chart">${q.a.map((_, i) => `
           <div class="bar-wrap">
             <div class="bar-num">${counts[i]}${i === q.c ? " ✔" : ""}</div>
-            <div class="bar c${i}" data-h="${Math.round((counts[i] / max) * 100)}" style="${i === q.c ? "" : "opacity:.45"}"></div>
-            <div class="bar-foot c${i}" style="${i === q.c ? "" : "opacity:.45"}">${SHAPES[i]}</div>
+            <div class="bar${i === q.c ? " ok" : ""}" data-h="${Math.round((counts[i] / max) * 100)}"></div>
+            <div class="bar-foot${i === q.c ? " ok" : ""}">${SHAPES[i]}</div>
           </div>`).join("")}
         </div>
         ${q.f ? `<div class="fact">💡 ${esc(q.f)}</div>` : ""}
@@ -499,7 +523,7 @@
           : `<small class="lb-gap">−${ahead.score - p.score} dari #${i}</small>`;
         const from = prev ? prev.score.get(p.key) ?? 0 : p.score;
         return `<div class="lb-row flip${p.move > 0 ? " rising" : ""}" data-k="${esc(p.key)}">
-            <span class="lb-rank">${i < 3 ? MEDALS[i] : i + 1}</span>
+            <span class="lb-rank">${i + 1}</span>
             <span class="lb-name">${p.av} ${esc(p.name)}${p.streak >= 2 ? `<span class="streak">🔥${p.streak}</span>` : ""}</span>
             ${mv}
             <span class="lb-right"><span class="lb-score" data-from="${from}" data-to="${p.score}">${from}</span>${gap}</span>
@@ -515,6 +539,9 @@
         </div>
         <div class="host-actions"><button class="btn white" id="nextBtn">${endOfSess ? `Hasil Sesi ${s + 1} 🏁` : "Soal berikutnya ▶"}</button></div>`);
       this.animateLb(prev);
+      for (const p of this.players.values()) {
+        this.send(p, { t: "board", s, qn: (this.qi % this.perSess) + 1, per: this.perSess, mult: SESS[s].mult, rank: sorted.indexOf(p) + 1, total: sorted.length, score: p.score, rows: boardRows(sorted, p, 10) });
+      }
       document.getElementById("nextBtn").onclick = () => endOfSess ? this.sessionEnd(s) : this.next();
     },
     animateLb(prev) {
@@ -546,7 +573,7 @@
       return `<div class="st-wrap"><table class="st">
         <thead><tr><th>#</th><th class="nm">Pemain</th>${cols.map((_, i) => `<th>Sesi ${i + 1}</th>`).join("")}<th>Total</th></tr></thead>
         <tbody>${sorted.map((p, i) => `<tr${i < 3 ? ` class="top${i + 1}"` : ""}>
-          <td>${i < 3 ? MEDALS[i] : i + 1}</td><td class="nm">${p.av} ${esc(p.name)}</td>
+          <td>${i + 1}</td><td class="nm">${p.av} ${esc(p.name)}</td>
           ${cols.map((_, j) => `<td>${p.sess[j] || 0}</td>`).join("")}<td class="tot">${p.score}</td></tr>`).join("")}</tbody>
       </table></div>`;
     },
@@ -594,8 +621,8 @@
         </div>` : `<div class="pod ${cls}"></div>`;
       render(`
         <div class="center" style="justify-content:flex-start;padding-top:28px">
-          <div class="title-pill">🎉 Juara Cerebrum Quiz</div>
-          <div class="podium">${slot(sorted[1], "p2", "🥈")}${slot(sorted[0], "p1", "🥇")}${slot(sorted[2], "p3", "🥉")}</div>
+          <div class="title-pill">Juara Cerebrum Quiz</div>
+          <div class="podium">${slot(sorted[1], "p2", "2")}${slot(sorted[0], "p1", "1")}${slot(sorted[2], "p3", "3")}</div>
           ${stars ? `<div class="mini-top">${stars}</div>` : ""}
           <div class="row">
             <button class="btn white" id="allBtn">📋 Klasemen akhir</button>
@@ -736,6 +763,7 @@
           Sfx.go(); break;
         }
         case "sessionEnd": this.sessionEnd(msg); break;
+        case "board": this.board(msg); break;
         case "question": this.question(msg); break;
         case "ack": this.waiting("Jawaban terkirim!", "Semoga benar… 🤞", pick(["🤞", "🙏", "😬", "🤔"])); break;
         case "result": this.result(msg); break;
@@ -760,7 +788,7 @@
         try { navigator.vibrate && navigator.vibrate(40); } catch {}
         Sfx.tick();
         this.conn.send({ t: "answer", qi: m.qi, choice: +b.dataset.i });
-        document.querySelectorAll(".p-answers .ans").forEach((x) => { if (x !== b) x.classList.add("dim"); });
+        b.classList.add("picked"); document.querySelectorAll(".p-answers .ans").forEach((x) => { if (x !== b) x.classList.add("dim"); });
       });
       this.stopTimer && this.stopTimer();
       this.stopTimer = countdown(m.left, (l) => { const el = document.getElementById("pt"); if (el) el.textContent = `⏱ ${l}`; }, () => {
@@ -782,9 +810,10 @@
           ${m.streak >= 2 ? `<div>🔥 Beruntun ${m.streak}x!</div>` : ""}
           <div style="font-size:20px">Kamu di peringkat <b>#${m.rank}</b>${m.total ? ` dari ${m.total}` : ""}</div>
           ${m.move > 0 ? `<div class="mv-pill up">▲ Naik ${m.move} peringkat!</div>` : m.move < 0 ? `<div class="mv-pill down">▼ Turun ${-m.move} peringkat</div>` : ""}
-          ${m.behind ? `<div style="opacity:.9">${m.behind.gap === 0 ? `Seri dengan ${esc(m.behind.name)}!` : `${m.behind.gap} poin lagi untuk menyalip ${esc(m.behind.name)} 🏃`}</div>`
+          ${m.behind ? `<div>${m.behind.gap === 0 ? `Seri dengan ${esc(m.behind.name)}!` : `${m.behind.gap} poin lagi untuk menyalip ${esc(m.behind.name)} 🏃`}</div>`
             : m.rank === 1 ? `<div>👑 Kamu memimpin!${m.chaser ? ` ${esc(m.chaser.name)} mengejar, selisih ${m.chaser.gap} poin` : ""}</div>` : ""}
         </div>
+        ${m.board ? `<div class="p-board"><h3>Peringkat${m.s != null ? ` <small>Sesi ${m.s + 1} · Soal ${m.qn}/${m.per}</small>` : ""}</h3>${boardHtml(m.board)}</div>` : ""}
         <div class="p-bottom"><span>${esc(this.name)}</span><span class="score-tag">${this.score}</span></div>`);
       ok ? Sfx.correct() : Sfx.wrong();
       try { navigator.vibrate && navigator.vibrate(ok ? [60, 40, 60] : 300); } catch {}
@@ -803,6 +832,18 @@
           <p class="foot">Lihat podium di layar host 👀</p>
         </div>`);
       if (m.rank <= 3) { Sfx.fanfare(); confetti(); }
+    },
+    board(m) {
+      this.stopTimer && this.stopTimer();
+      this.score = m.score;
+      render(`
+        <div class="p-top"><span>Sesi ${m.s + 1} · Soal ${m.qn}/${m.per} <span class="mult-tag">×${m.mult}</span></span><span>#${m.rank} dari ${m.total}</span></div>
+        <div class="p-board">
+          <div class="title-pill" style="font-size:22px;align-self:center">Papan Peringkat</div>
+          ${boardHtml(m.rows)}
+          <p class="foot" style="text-align:center;margin:6px auto 0">Lihat layar host · soal berikutnya segera 🏃</p>
+        </div>
+        <div class="p-bottom"><span>${esc(this.av || "")} ${esc(this.name || "")}</span><span class="score-tag">${this.score}</span></div>`);
     },
     sessionEnd(m) {
       this.stopTimer && this.stopTimer();
@@ -829,7 +870,7 @@
   //  SOLO (latihan sendiri, tanpa PIN)
   // =========================================================
   const Solo = {
-    setup() { settingsCard("Main Solo 🎯", "Mulai!", (n, t) => this.start(n, t)); },
+    setup() { settingsCard("Main <span class=\"hl\">Solo</span>", "Mulai →", (n, t) => this.start(n, t)); },
     start(n, t) {
       this.deck = buildDeck(n); this.time = t; this.qi = -1; this.score = 0; this.streak = 0; this.right = 0;
       this.next();
@@ -842,7 +883,7 @@
         <div class="q-head">${esc(q.q)}</div>
         <div class="q-mid">
           <div class="timer" id="timer">${this.time}</div>
-          <div class="q-brain">🧠</div>
+          <div class="q-brain" aria-hidden="true"></div>
           <div class="ans-count"><b>${this.score}</b>Poin</div>
         </div>
         ${answerButtons(q, { clickable: true })}
