@@ -1,6 +1,6 @@
 // Soal HOTS untuk mode Balapan Peta — setiap soal punya "clue" yang ditampilkan lebih dulu.
 // Dipakai 8 soal acak per game. Benar = +2 petak & dapat 1 senjata/skill.
-// Fakta angka dari Product Knowledge Center — Team SEOBRUM (dokumen kurikulum 2026).
+// Fokus UTBK (Cerebrum) & CPNS (JadiASN). Fakta angka dari Product Knowledge Center — Team SEOBRUM (2026).
 // Format: { q, a: [...], c: indexBenar, clue: "petunjuk", f: "pembahasan singkat" }
 
 window.HOTS = [
@@ -24,13 +24,6 @@ window.HOTS = [
     c: 0,
     clue: "Kalikan tiap nilai dengan bobotnya, lalu jumlahkan.",
     f: "0,4 × 80 = 32; 0,6 × 70 = 42; total 74."
-  },
-  {
-    q: "TPA Bappenas: total 250 soal / 180 menit. Verbal 90 soal & Kuantitatif 90 soal (masing-masing 60 menit). Subtes Penalaran berisi…",
-    a: ["70 soal, 60 menit", "80 soal, 60 menit", "70 soal, 50 menit", "60 soal, 70 menit"],
-    c: 0,
-    clue: "Kurangi total soal & total waktu dengan dua subtes yang sudah diketahui.",
-    f: "250 − 180 = 70 soal; 180 − 120 = 60 menit."
   },
   {
     q: "Lanjutkan pola bilangan: 2, 6, 12, 20, 30, …",
@@ -89,10 +82,24 @@ window.HOTS = [
     f: "TPS 90 menit + Literasi 105 menit = 195 menit."
   },
   {
-    q: "Passing grade Tes AKHLAK RBB BUMN adalah 65 dari 90. Itu setara kira-kira…",
-    a: ["± 72%", "± 65%", "± 80%", "± 60%"],
+    q: "Nilai SKD Rina (ketentuan umum): TWK 70, TIU 75, TKP 170. Apakah Rina lolos nilai ambang batas?",
+    a: ["Tidak, karena TIU di bawah 80", "Ya, semua lolos", "Tidak, karena TKP di bawah 166", "Tidak, karena TWK di bawah 65"],
     c: 0,
-    clue: "Persentase = nilai ÷ nilai maksimal × 100%.",
-    f: "65 ÷ 90 ≈ 0,72 → ± 72%."
+    clue: "Cek SATU per SATU dengan ambang batasnya: TWK 65, TIU 80, TKP 166.",
+    f: "Semua subtes harus lolos; TIU 75 < 80."
+  },
+  {
+    q: "Berapa skor maksimal total SKD CPNS (TWK + TIU + TKP)?",
+    a: ["550", "500", "450", "600"],
+    c: 0,
+    clue: "TWK 30 soal × 5, TIU 35 soal × 5, TKP 45 soal × maks 5.",
+    f: "150 + 175 + 225 = 550."
+  },
+  {
+    q: "Di TIU (35 soal), Andi menjawab benar 20, salah 10, dan mengosongkan 5. Nilai TIU Andi…",
+    a: ["100", "90", "75", "110"],
+    c: 0,
+    clue: "Benar = 5 poin. Salah dan kosong = 0 poin (tidak mengurangi).",
+    f: "20 × 5 = 100 — salah/kosong tidak dikurangi."
   }
 ];
