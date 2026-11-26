@@ -8,7 +8,41 @@
   // ---------- Konstanta ----------
   const PREFIX = "cbrquiz-v1-";
   const SHAPES = ["A", "B", "C", "D"];
-  const AVATARS = ["🦊", "🐼", "🐯", "🐸", "🐵", "🦁", "🐧", "🐙", "🦄", "🐨", "🐶", "🐱"];
+  // ---------- Karakter (avatar) yang bisa dikustom tiap pemain ----------
+  const EMOJIS = ["🦊", "🐼", "🐯", "🐸", "🐵", "🦁", "🐧", "🐙", "🦄", "🐨", "🐶", "🐱", "🐰", "🐻", "🐮", "🐷",
+    "🐔", "🦉", "🐳", "🦖", "🐲", "🦋", "🐝", "🐢", "😎", "🤓", "🥳", "😺", "🤖", "👻", "👽", "🧠",
+    "🧑‍🚀", "🧙", "🥷", "🦸", "🍕", "🍩", "⚽", "🎮"];
+  const ACCS = [
+    { e: "", n: "Tanpa" }, { e: "👑", p: "top" }, { e: "🎩", p: "top" }, { e: "🧢", p: "top" }, { e: "🎓", p: "top" },
+    { e: "🎀", p: "top" }, { e: "🎧", p: "top" }, { e: "🕶️", p: "mid" }, { e: "⭐", p: "badge" }, { e: "🔥", p: "badge" },
+    { e: "💎", p: "badge" }, { e: "⚡", p: "badge" },
+  ];
+  const AV_COLORS = ["#d4ff3a", "#ffffff", "#ff5a47", "#3a8bff", "#ffb703", "#9b5cff", "#2ec4b6", "#3a3a3a"];
+  const EMOJI_RE = /\p{Extended_Pictographic}|\p{Regional_Indicator}/u;
+  function firstGrapheme(str) {
+    try { const it = new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(str)[Symbol.iterator]().next(); return it.done ? "" : it.value.segment; }
+    catch { return [...str][0] || ""; }
+  }
+  // Validasi avatar dari siapa pun (dipakai host & saat menggambar): { e: emoji, x: aksesori, b: warna }
+  function cleanAv(a) {
+    if (typeof a === "string") a = { e: a };
+    if (!a || typeof a !== "object") a = {};
+    let e = firstGrapheme(String(a.e || "").trim()).slice(0, 16);
+    if (!EMOJI_RE.test(e)) e = "🙂";
+    const x = ACCS.some((c) => c.e && c.e === a.x) ? a.x : "";
+    const b = Number.isInteger(a.b) && a.b >= 0 && a.b < AV_COLORS.length ? a.b : 0;
+    return { e, x, b };
+  }
+  const randomAv = () => ({ e: pick(EMOJIS), x: Math.random() < .5 ? "" : pick(ACCS.slice(1)).e, b: Math.floor(Math.random() * AV_COLORS.length) });
+  function avHtml(av, cls = "") {
+    const a = cleanAv(av);
+    const acc = a.x ? ACCS.find((c) => c.e === a.x) : null;
+    return `<span class="avt ${cls}" style="--avb:${AV_COLORS[a.b]}"><span class="avbg"></span><span class="ave">${esc(a.e)}</span>${acc ? `<span class="avx ${acc.p}">${acc.e}</span>` : ""}</span>`;
+  }
+  const keep = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
   const CHEERS_OK = ["Mantap! 🔥", "Keren banget! 😎", "Jenius! 🧠", "Gaspol! 🚀", "Sempurna! ✨"];
   const CHEERS_BAD = ["Yahh, hampir! 😅", "Gapapa, next! 💪", "Oops! 🙈", "Semangat lagi! ✊"];
   // 3 sesi: poin makin besar tiap sesi, jadi yang tertinggal masih bisa menyalip
@@ -150,7 +184,7 @@
       prev = x.r;
       const mv = x.mv > 0 ? `<span class="mv up">▲${x.mv}</span>` : x.mv < 0 ? `<span class="mv down">▼${-x.mv}</span>` : `<span class="mv same">•</span>`;
       const gap = x.gap == null ? `<small class="lb-gap lead">Memimpin</small>` : x.gap === 0 ? `<small class="lb-gap">Seri</small>` : `<small class="lb-gap">−${x.gap}</small>`;
-      out += `<div class="lb-row${x.me ? " me" : ""}"><span class="lb-rank">${x.r}</span><span class="lb-name">${esc(x.av)} ${esc(x.n)}${x.me ? " · kamu" : ""}</span>${mv}<span class="lb-right"><span class="lb-score">${x.sc}</span>${gap}</span></div>`;
+      out += `<div class="lb-row${x.me ? " me" : ""}"><span class="lb-rank">${x.r}</span><span class="lb-name">${avHtml(x.av)} ${esc(x.n)}${x.me ? " · kamu" : ""}</span>${mv}<span class="lb-right"><span class="lb-score">${x.sc}</span>${gap}</span></div>`;
     }
     return `<div class="lb">${out}</div>`;
   }
@@ -297,13 +331,20 @@
           conn.send({ t: "joined", ok: false, err: "Nama sudah dipakai, coba nama lain 😉" }); return;
         }
         if (existing && existing.conn && existing.conn !== conn) { const old = existing.conn; existing.conn = null; try { old.close(); } catch {} }
-        const av = AVATARS.includes(msg.av) ? msg.av : pick(AVATARS);
+        const av = cleanAv(msg.av);
         const p = existing || { key, name, av, score: 0, streak: 0, sess: SESS.map(() => 0), move: 0 };
         p.conn = conn; p.online = true; p.av = av; p.tok = msg.tok;
         this.players.set(key, p);
         conn.send({ t: "joined", ok: true, name: p.name, av: p.av, score: p.score, started: this.phase !== "lobby" });
         if (this.phase === "lobby") { Sfx.join(); this.drawPlayers(); }
         else if (this.phase === "question" && !this.answers.has(key)) { this.send(p, this.questionMsg()); this.drawAnswered(); }
+        return;
+      }
+      if (msg.t === "avatar") {
+        const p = [...this.players.values()].find((x) => x.conn === conn); if (!p) return;
+        p.av = cleanAv(msg.av);
+        conn.send({ t: "avatarOk", av: p.av });
+        if (this.phase === "lobby") this.drawPlayers(); else this.drawAnswered();
         return;
       }
       if (msg.t === "answer") {
@@ -349,7 +390,7 @@
       document.getElementById("pCount").textContent = list.length;
       document.getElementById("nextBtn").disabled = list.length === 0;
       box.innerHTML = list.length
-        ? `<div class="players">${list.map((p) => `<div class="player-chip" data-k="${esc(p.key)}" title="Keluarkan">${p.av} ${esc(p.name)}</div>`).join("")}</div>`
+        ? `<div class="players">${list.map((p) => `<div class="player-chip" data-k="${esc(p.key)}" title="Keluarkan">${avHtml(p.av)} ${esc(p.name)}</div>`).join("")}</div>`
         : `<div class="waiting-text">Menunggu pemain bergabung… ⏳</div>`;
       box.querySelectorAll(".player-chip").forEach((el) => el.onclick = () => {
         const p = this.players.get(el.dataset.k); if (!p) return;
@@ -385,7 +426,7 @@
           <div class="big-emoji" id="cd">${info.emoji}</div>
           <div class="mult-pill">Poin ×${info.mult}</div>
           <p style="font-size:clamp(18px,2.4vw,24px);margin:0">${info.desc}</p>
-          ${top.length ? `<div class="mini-top">${top.map((p, i) => `<span>${MEDALS[i]} ${p.av} ${esc(p.name)} <b>${p.score}</b></span>`).join("")}</div>
+          ${top.length ? `<div class="mini-top">${top.map((p, i) => `<span>${MEDALS[i]} ${avHtml(p.av)} ${esc(p.name)} <b>${p.score}</b></span>`).join("")}</div>
             ${sorted.length > 1 ? `<p class="foot">Selisih #1 dan #2: <b>${sorted[0].score - sorted[1].score}</b> poin — dengan poin ×${info.mult}, satu jawaban cepat bisa membalik keadaan!</p>` : ""}` : ""}
         </div>
         <div class="host-actions"><button class="btn white" id="nextBtn">Mulai Sesi ${s + 1} ▶</button></div>`);
@@ -447,7 +488,7 @@
       const wait = list.filter((p) => !this.answers.has(p.key));
       box.innerHTML = `
         <div class="answered-head"><b>Sudah jawab ${done.length}/${list.length}</b><span>${wait.length ? `Menunggu ${wait.length} pemain…` : "Semua sudah jawab ✓"}</span></div>
-        <div class="answered-list">${done.map((p, i) => `<span class="ap done" title="Sudah jawab">${i === 0 ? "⚡" : "✓"} ${esc(p.av)} ${esc(p.name)} <small>${this.answers.get(p.key).elapsed.toFixed(1)}s</small></span>`).join("")}${wait.map((p) => `<span class="ap" title="Belum jawab">${esc(p.av)} ${esc(p.name)}</span>`).join("")}</div>`;
+        <div class="answered-list">${done.map((p, i) => `<span class="ap done" title="Sudah jawab">${i === 0 ? "⚡" : "✓"} ${avHtml(p.av)} ${esc(p.name)} <small>${this.answers.get(p.key).elapsed.toFixed(1)}s</small></span>`).join("")}${wait.map((p) => `<span class="ap" title="Belum jawab">${avHtml(p.av)} ${esc(p.name)}</span>`).join("")}</div>`;
     },
     checkAllAnswered() {
       if (this.phase !== "question") return;
@@ -531,7 +572,7 @@
         const from = prev ? prev.score.get(p.key) ?? 0 : p.score;
         return `<div class="lb-row flip${p.move > 0 ? " rising" : ""}" data-k="${esc(p.key)}">
             <span class="lb-rank">${i + 1}</span>
-            <span class="lb-name">${p.av} ${esc(p.name)}${p.streak >= 2 ? `<span class="streak">🔥${p.streak}</span>` : ""}</span>
+            <span class="lb-name">${avHtml(p.av)} ${esc(p.name)}${p.streak >= 2 ? `<span class="streak">🔥${p.streak}</span>` : ""}</span>
             ${mv}
             <span class="lb-right"><span class="lb-score" data-from="${from}" data-to="${p.score}">${from}</span>${gap}</span>
           </div>`;
@@ -580,7 +621,7 @@
       return `<div class="st-wrap"><table class="st">
         <thead><tr><th>#</th><th class="nm">Pemain</th>${cols.map((_, i) => `<th>Sesi ${i + 1}</th>`).join("")}<th>Total</th></tr></thead>
         <tbody>${sorted.map((p, i) => `<tr${i < 3 ? ` class="top${i + 1}"` : ""}>
-          <td>${i + 1}</td><td class="nm">${p.av} ${esc(p.name)}</td>
+          <td>${i + 1}</td><td class="nm">${avHtml(p.av)} ${esc(p.name)}</td>
           ${cols.map((_, j) => `<td>${p.sess[j] || 0}</td>`).join("")}<td class="tot">${p.score}</td></tr>`).join("")}</tbody>
       </table></div>`;
     },
@@ -605,7 +646,7 @@
         <div class="center" style="justify-content:flex-start;padding-top:24px">
           ${this.sessSteps(s + 1)}
           <div class="title-pill">🏁 Sesi ${s + 1} Selesai!</div>
-          ${star ? `<div class="star-card">⭐ Bintang Sesi ${s + 1}: <b>${star.av} ${esc(star.name)}</b> (+${star.sess[s]} poin)</div>` : ""}
+          ${star ? `<div class="star-card">⭐ Bintang Sesi ${s + 1}: <b>${avHtml(star.av)} ${esc(star.name)}</b> (+${star.sess[s]} poin)</div>` : ""}
           ${this.standingsTable(sorted, s)}
           <p class="foot">Berikutnya: <b>Sesi ${s + 2} — ${SESS[s + 1].name}</b>, poin ×${SESS[s + 1].mult}. Masih ada kesempatan menyalip! 🏃</p>
         </div>
@@ -619,11 +660,11 @@
       for (const p of this.players.values()) this.send(p, { t: "end", rank: rank(p), score: p.score, total: sorted.length, sess: p.sess });
       const stars = SESS.map((_, s) => {
         const best = [...this.players.values()].sort((a, b) => b.sess[s] - a.sess[s])[0];
-        return best && best.sess[s] > 0 ? `<span>⭐ Sesi ${s + 1}: ${best.av} ${esc(best.name)}</span>` : "";
+        return best && best.sess[s] > 0 ? `<span>⭐ Sesi ${s + 1}: ${avHtml(best.av)} ${esc(best.name)}</span>` : "";
       }).join("");
       const slot = (p, cls, medal) => p ? `
         <div class="pod ${cls}">
-          <div class="pod-name">${p.av}<br>${esc(p.name)}</div>
+          <div class="pod-name">${avHtml(p.av, "lg")}<br>${esc(p.name)}</div>
           <div class="pod-block"><span class="medal">${medal}</span><span class="pts">${p.score}</span></div>
         </div>` : `<div class="pod ${cls}"></div>`;
       render(`
@@ -713,40 +754,89 @@
       document.getElementById("hm").onclick = () => { location.href = location.pathname; };
     },
 
-    nickname() {
-      let av = pick(AVATARS);
+    // Pembuat karakter: pilih/ketik emoji, aksesori, warna latar. edit=true untuk mengubah setelah masuk room.
+    nickname(edit = false) {
+      let av = cleanAv(edit ? this.av : (() => { try { return JSON.parse(keep.get("cq-char")); } catch { return null; } })() || randomAv());
+      const lastName = edit ? this.name : (keep.get("cq-lastname") || "");
       render(`
-        <div class="center">
-          <h1 class="logo" style="font-size:40px">Siapa namamu? ✍️</h1>
-          <form class="card" id="nf" autocomplete="off">
-            <input class="input" id="nm" maxlength="15" placeholder="Nama panggilan" aria-label="Nama panggilan" />
-            <div class="muted">Pilih avatar</div>
-            <div class="avatars">${AVATARS.map((a) => `<button type="button" class="av${a === av ? " on" : ""}" data-a="${a}">${a}</button>`).join("")}</div>
-            <button class="btn" type="submit">Oke, gas! 🚀</button>
+        <div class="center creator">
+          <h1 class="logo" style="font-size:clamp(24px,7vw,34px)">${edit ? "Ubah" : "Buat"} <span class="hl">karaktermu</span></h1>
+          <div class="char-preview"><div id="pv"></div><div class="char-name" id="pvName"></div></div>
+          <form class="card char-card" id="nf" autocomplete="off">
+            ${edit ? "" : `<b>Nama panggilan</b>
+            <input class="input name-input" id="nm" maxlength="15" placeholder="Nama kamu" value="${esc(lastName)}" aria-label="Nama panggilan" />`}
+            <b>Karakter</b>
+            <div class="emoji-grid" id="eg">${EMOJIS.map((e) => `<button type="button" class="av" data-e="${e}" aria-label="${e}">${e}</button>`).join("")}</div>
+            <input class="input own-emoji" id="own" maxlength="16" placeholder="…atau ketik / tempel emoji sendiri" aria-label="Emoji sendiri" />
+            <b>Aksesori</b>
+            <div class="acc-row" id="ac">${ACCS.map((c) => `<button type="button" class="av" data-x="${c.e}" aria-label="${c.e || "Tanpa aksesori"}">${c.e || "✕"}</button>`).join("")}</div>
+            <b>Warna latar</b>
+            <div class="color-row" id="cr">${AV_COLORS.map((c, i) => `<button type="button" class="sw" data-b="${i}" style="background:${c}" aria-label="Warna ${i + 1}"></button>`).join("")}</div>
+            <div class="char-actions">
+              <button type="button" class="btn outline" id="rnd">🎲 Acak</button>
+              <button class="btn" type="submit">${edit ? "Simpan ✓" : "Oke, gas! 🚀"}</button>
+            </div>
+            ${edit ? `<button type="button" class="btn ghost" id="cancel">Batal</button>` : ""}
           </form>
         </div>`);
-      const nm = document.getElementById("nm"); nm.focus();
-      document.querySelectorAll(".av").forEach((b) => b.onclick = () => {
-        document.querySelectorAll(".av").forEach((x) => x.classList.remove("on")); b.classList.add("on"); av = b.dataset.a; Sfx.tick();
+      const nm = document.getElementById("nm");
+      const own = document.getElementById("own");
+      const sync = () => {
+        document.getElementById("pv").innerHTML = avHtml(av, "xl");
+        document.getElementById("pvName").textContent = (nm ? nm.value.trim() : this.name) || "Nama kamu";
+        document.querySelectorAll("#eg .av").forEach((x) => x.classList.toggle("on", x.dataset.e === av.e));
+        document.querySelectorAll("#ac .av").forEach((x) => x.classList.toggle("on", x.dataset.x === av.x));
+        document.querySelectorAll("#cr .sw").forEach((x) => x.classList.toggle("on", +x.dataset.b === av.b));
+      };
+      sync();
+      if (nm) { nm.addEventListener("input", sync); if (!lastName) nm.focus(); }
+      document.querySelectorAll("#eg .av").forEach((x) => x.onclick = () => { av = { ...av, e: x.dataset.e }; own.value = ""; Sfx.tick(); sync(); });
+      document.querySelectorAll("#ac .av").forEach((x) => x.onclick = () => { av = { ...av, x: x.dataset.x }; Sfx.tick(); sync(); });
+      document.querySelectorAll("#cr .sw").forEach((x) => x.onclick = () => { av = { ...av, b: +x.dataset.b }; Sfx.tick(); sync(); });
+      own.addEventListener("input", () => {
+        const g = firstGrapheme(own.value.trim());
+        if (g && EMOJI_RE.test(g)) { av = { ...av, e: g }; sync(); }
       });
+      document.getElementById("rnd").onclick = () => { av = cleanAv(randomAv()); own.value = ""; Sfx.join(); sync(); };
+      if (edit) document.getElementById("cancel").onclick = () => this.backToWaiting();
       document.getElementById("nf").onsubmit = (e) => {
         e.preventDefault();
+        av = cleanAv(av);
+        keep.set("cq-char", JSON.stringify(av));
+        if (edit) {
+          this.av = av;
+          try { this.conn.send({ t: "avatar", av }); } catch {}
+          store.set("cq-name-" + this.pin, JSON.stringify({ name: this.name, av: this.av }));
+          toast("Karakter diperbarui ✓");
+          this.backToWaiting();
+          return;
+        }
         const name = nm.value.trim();
-        if (!name) { toast("Isi nama dulu ya 🙂"); return; }
+        if (!name) { toast("Isi nama dulu ya 🙂"); nm.focus(); return; }
+        keep.set("cq-lastname", name);
         this.join(name, av);
       };
     },
     join(name, av) {
-      this.name = name; this.av = av;
+      this.name = name; this.av = cleanAv(av);
       let tok = store.get("cq-tok");
       if (!tok) { tok = Math.random().toString(36).slice(2) + Date.now().toString(36); store.set("cq-tok", tok); }
-      try { this.conn.send({ t: "join", name, av, tok }); } catch { this.lost(); }
+      try { this.conn.send({ t: "join", name, av: this.av, tok }); } catch { this.lost(); }
     },
-    waiting(title, sub, emoji = "⏳") {
+    // edit=true: tampilkan tombol "Ubah karakter" (di layar tunggu antar-soal / lobby)
+    waiting(title, sub, emoji = "⏳", edit = false) {
+      this._wait = [title, sub, emoji, edit];
       render(`
-        <div class="p-top"><span>${this.av || ""} ${esc(this.name || "")}</span><span>PIN ${esc(this.pin)}</span></div>
-        <div class="center"><div class="big-emoji">${emoji}</div><h2 style="margin:0">${title}</h2><p>${sub}</p></div>
+        <div class="p-top"><span>${avHtml(this.av)} ${esc(this.name || "")}</span><span>PIN ${esc(this.pin)}</span></div>
+        <div class="center"><div class="big-emoji">${emoji}</div><h2 style="margin:0">${title}</h2><p>${sub}</p>
+          ${edit ? `<button class="btn outline" id="editChar">✏️ Ubah karakter</button>` : ""}</div>
         <div class="p-bottom"><span>${esc(this.name || "")}</span><span class="score-tag">${this.score}</span></div>`);
+      if (edit) document.getElementById("editChar").onclick = () => { Sfx.tick(); this.nickname(true); };
+    },
+    backToWaiting() {
+      const w = this._wait || ["Kamu sudah masuk! 🎉", "Tunggu host memulai game.", "✅", true];
+      if (w[3]) w[2] = avHtml(this.av, "xl");
+      this.waiting(...w);
     },
 
     onMsg(msg) {
@@ -754,10 +844,10 @@
       switch (msg.t) {
         case "joined":
           if (!msg.ok) { toast(msg.err || "Gagal masuk"); this.nickname(); return; }
-          this.name = msg.name; this.av = msg.av; this.score = msg.score || 0;
+          this.name = msg.name; this.av = cleanAv(msg.av); this.score = msg.score || 0;
           store.set("cq-name-" + this.pin, JSON.stringify({ name: this.name, av: this.av }));
           Sfx.join();
-          this.waiting("Kamu sudah masuk! 🎉", msg.started ? "Game sedang berjalan, tunggu soal berikutnya…" : "Lihat namamu di layar host 👀<br>Tunggu host memulai game.", "✅");
+          this.waiting("Kamu sudah masuk! 🎉", msg.started ? "Game sedang berjalan, tunggu soal berikutnya…" : "Lihat karaktermu di layar host 👀<br>Tunggu host memulai game.", avHtml(this.av, "xl"), true);
           break;
         case "getready":
           this.total = msg.total; this.score = 0;
@@ -767,7 +857,7 @@
           const info = msg.rank
             ? msg.rank === 1 ? `Kamu memimpin! 👑 Pertahankan posisimu.` : `Kamu di peringkat <b>#${msg.rank}</b>, ${msg.gapLead} poin di belakang pemimpin. Kejar! 🏃`
             : "Jawab cepat & benar untuk modal poin awal!";
-          this.waiting(`Sesi ${msg.s + 1}: ${esc(msg.name)}`, `Poin ×${msg.mult} · ${msg.per} soal<br>${info}`, msg.emoji || "🎮");
+          this.waiting(`Sesi ${msg.s + 1}: ${esc(msg.name)}`, `Poin ×${msg.mult} · ${msg.per} soal<br>${info}`, msg.emoji || "🎮", true);
           Sfx.go(); break;
         }
         case "sessionEnd": this.sessionEnd(msg); break;
@@ -776,7 +866,8 @@
         case "ack": this.waiting("Jawaban terkirim!", "Semoga benar… 🤞", pick(["🤞", "🙏", "😬", "🤔"])); break;
         case "result": this.result(msg); break;
         case "end": this.end(msg); break;
-        case "lobby": this._ended = false; this.score = 0; this.waiting("Main lagi! 🔁", "Tunggu host memulai game baru.", "🎮"); break;
+        case "lobby": this._ended = false; this.score = 0; this.waiting("Main lagi! 🔁", "Tunggu host memulai game baru.", avHtml(this.av, "xl"), true); break;
+        case "avatarOk": this.av = cleanAv(msg.av); break;
         case "kicked":
           this._kicked = true; store.del("cq-name-" + this.pin);
           render(`<div class="center"><div class="big-emoji">👋</div><h2>Kamu dikeluarkan dari room</h2><button class="btn white" onclick="location.href=location.pathname">Ke beranda</button></div>`);
@@ -789,7 +880,7 @@
         <div class="p-top"><span>${m.s != null ? `Sesi ${m.s + 1} · ${m.qs + 1}/${m.per} <span class="mult-tag">×${m.mult}</span>` : `${m.qi + 1} / ${m.total}`}</span><span id="pt">⏱ ${m.left}</span></div>
         <div class="p-q">${esc(m.q)}</div>
         ${answerButtons({ a: m.a }, { clickable: true, cls: "p-answers" })}
-        <div class="p-bottom"><span>${this.av} ${esc(this.name)}</span><span class="score-tag">${this.score}</span></div>`);
+        <div class="p-bottom"><span>${avHtml(this.av)} ${esc(this.name)}</span><span class="score-tag">${this.score}</span></div>`);
       let sent = false;
       document.querySelectorAll(".p-answers .ans").forEach((b) => b.onclick = () => {
         if (sent) return; sent = true;
@@ -809,7 +900,7 @@
       const ok = m.correct;
       const sub = !m.answered ? "Kamu tidak menjawab 😴" : ok ? pick(CHEERS_OK) : pick(CHEERS_BAD);
       render(`
-        <div class="p-top"><span>${this.av} ${esc(this.name)}</span><span>PIN ${esc(this.pin)}</span></div>
+        <div class="p-top"><span>${avHtml(this.av)} ${esc(this.name)}</span><span>PIN ${esc(this.pin)}</span></div>
         <div class="result-screen ${ok ? "ok" : "bad"}">
           <div class="big-emoji">${ok ? "✅" : "❌"}</div>
           <h2 class="result-title">${ok ? "Benar!" : "Salah"}</h2>
@@ -851,7 +942,7 @@
           ${boardHtml(m.rows)}
           <p class="foot" style="text-align:center;margin:6px auto 0">Lihat layar host · soal berikutnya segera 🏃</p>
         </div>
-        <div class="p-bottom"><span>${esc(this.av || "")} ${esc(this.name || "")}</span><span class="score-tag">${this.score}</span></div>`);
+        <div class="p-bottom"><span>${avHtml(this.av)} ${esc(this.name || "")}</span><span class="score-tag">${this.score}</span></div>`);
     },
     sessionEnd(m) {
       this.stopTimer && this.stopTimer();
@@ -859,7 +950,7 @@
       if (!m.next) { this.waiting("Semua sesi selesai! 🏁", "Menghitung juara…", "🥁"); return; }
       const iStar = m.star && m.star === this.name;
       render(`
-        <div class="p-top"><span>${this.av} ${esc(this.name)}</span><span>PIN ${esc(this.pin)}</span></div>
+        <div class="p-top"><span>${avHtml(this.av)} ${esc(this.name)}</span><span>PIN ${esc(this.pin)}</span></div>
         <div class="center">
           <div class="big-emoji">${iStar ? "⭐" : MEDALS[m.rank - 1] || "🏁"}</div>
           <div class="title-pill">Sesi ${m.s + 1} selesai</div>

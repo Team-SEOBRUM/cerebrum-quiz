@@ -337,3 +337,41 @@ input { font-family: inherit; }
 .ap { padding: 6px 12px; background: var(--bg-3); border: 1px solid var(--line); color: var(--muted); font-weight: 700; font-size: 15px; opacity: .6; clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px); }
 .ap.done { background: var(--accent); color: var(--ink); border-color: var(--accent); opacity: 1; animation: pop .3s cubic-bezier(.3,1.6,.6,1); }
 .ap small { font-weight: 600; opacity: .7; margin-left: 2px; }
+
+/* ===== Karakter (avatar) kustom ===== */
+.avt {
+  --avb: #d4ff3a;
+  position: relative; display: inline-grid; place-items: center; flex: none;
+  width: 1.7em; height: 1.7em; margin: .4em .25em 0 0; vertical-align: middle; line-height: 1;
+}
+.avbg { position: absolute; inset: 0; background: var(--avb); clip-path: polygon(.32em 0, 100% 0, 100% 100%, 0 100%, 0 .32em); }
+.ave { position: relative; font-size: 1.1em; }
+.avx { position: absolute; line-height: 1; pointer-events: none; }
+.avx.top { top: -.45em; left: 50%; transform: translateX(-50%) rotate(-10deg); font-size: .78em; }
+.avx.mid { top: 50%; left: 50%; transform: translate(-50%, -66%); font-size: .8em; }
+.avx.badge { right: -.3em; bottom: -.25em; font-size: .62em; }
+.avt.lg { font-size: 40px; margin: .4em 0 4px; }
+.avt.xl { font-size: 64px; margin: .45em 0 0; }
+.pod-name .avt.lg { margin-right: 0; }
+.big-emoji .avt.xl { animation: none; }
+
+.creator { justify-content: flex-start; padding-top: 22px; gap: 12px; }
+.char-preview { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.char-name { font-family: var(--head); font-stretch: 112%; font-weight: 800; font-size: 18px; }
+.char-card { max-width: 420px; gap: 10px; }
+.emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
+.emoji-grid .av, .acc-row .av { font-size: 22px; padding: 6px 0; }
+.acc-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.acc-row .av:first-child { font-size: 15px; font-weight: 800; color: #888; }
+.color-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.sw { aspect-ratio: 1; border: 2px solid #d0d0d0; clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px); }
+.sw.on { border: 3px solid var(--ink); box-shadow: inset 0 0 0 3px #fff; }
+.own-emoji { font-size: 16px; letter-spacing: 0; font-weight: 600; padding: 10px; font-family: var(--body); font-stretch: 100%; }
+.name-input { font-size: 20px; letter-spacing: 0; }
+.char-actions { display: flex; gap: 8px; justify-content: space-between; margin-top: 4px; }
+.char-actions .btn { flex: 1; }
+.card .btn.outline { color: var(--ink); border-color: var(--ink); }
+.card .btn.ghost { color: #777; }
+@media (max-width: 380px) { .emoji-grid { grid-template-columns: repeat(6, 1fr); } }
+.player-chip { display: inline-flex; align-items: center; gap: 4px; }
+.player-chip .avt { font-size: 1.45em; margin-top: .35em; }
