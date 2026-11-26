@@ -12,6 +12,16 @@ Materi soal diambil dari [Product Knowledge Center — Team SEOBRUM](https://pro
 
 Ada juga **🎯 Main Solo** untuk latihan sendiri tanpa PIN.
 
+## Mode game
+Saat klik **Jadi Host**, pilih salah satu:
+- **🏆 Quiz Interaktif** — 3 sesi kejar-kejaran poin (×1 → ×1.5 → ×2), papan peringkat tiap soal.
+- **🗺️ Balapan Peta** — 30 soal (22 reguler + 8 HOTS). Pemain berjalan di peta 40 petak; pertama sampai 🏁 menang.
+  - Benar +1 petak · soal HOTS +1 · penjawab benar tercepat +1.
+  - Soal HOTS selalu didahului layar **clue**. Bank soal HOTS ada di `questions-hots.js`.
+  - Senjata/skill didapat dari **3x benar beruntun** dan tiap **benar soal HOTS**; tas maks **3**:
+    ❄️ Freeze (lawan tidak bisa jawab soal berikutnya) · 💣 Bom (lawan mundur 2) · 🚀 Roket (maju 3) ·
+    🛡️ Perisai (tahan 1 serangan) · 💡 Bocoran (hapus 2 jawaban salah).
+
 ## Teknologi
 - HTML + CSS + JavaScript murni (tanpa build).
 - Koneksi realtime host ↔ pemain lewat broker MQTT publik di WebSocket aman port 443 (`wss://public.cloud.shiftr.io`, cadangan EMQX & HiveMQ) — `net.js` + `assets/mqtt.min.js` (mqtt.js, MIT). Jalan di data seluler maupun Wi-Fi kantor, **tidak butuh server/database**. Host berperan sebagai "server" — **tab host harus tetap terbuka** selama game.

@@ -268,7 +268,10 @@
     peer: null, pin: null, players: new Map(), deck: [], qi: -1, time: 20,
     phase: "lobby", answers: new Map(), qStart: 0, stopTimer: null, nQ: 15, perSess: 5, lastPrev: null,
 
-    setup() {
+    mode: "classic",
+    setup() { if (this.chooseMode) this.chooseMode(); else this.classicSetup(); },
+    classicSetup() {
+      this.mode = "classic";
       settingsCard("Buat <span class=\"hl\">Room</span>", "Buat Room →", (n, t) => { this.perSess = n; this.nQ = n * SESSIONS; this.time = t; this.open(); }, { sessions: true });
     },
     sess(qi = this.qi) { return Math.min(SESSIONS - 1, Math.floor(Math.max(0, qi) / this.perSess)); },
@@ -337,7 +340,7 @@
         this.players.set(key, p);
         conn.send({ t: "joined", ok: true, name: p.name, av: p.av, score: p.score, started: this.phase !== "lobby" });
         if (this.phase === "lobby") { Sfx.join(); this.drawPlayers(); }
-        else if (this.phase === "question" && !this.answers.has(key)) { this.send(p, this.questionMsg()); this.drawAnswered(); }
+        else if (this.phase === "question" && !this.answers.has(key)) { this.send(p, this.mode === "map" ? this.mQuestionMsg(p) : this.questionMsg()); this.drawAnswered(); }
         return;
       }
       if (msg.t === "avatar") {
@@ -347,9 +350,14 @@
         if (this.phase === "lobby") this.drawPlayers(); else this.drawAnswered();
         return;
       }
+      if (msg.t === "skill") {
+        const p = [...this.players.values()].find((x) => x.conn === conn);
+        if (p && this.mUseSkill) this.mUseSkill(p, msg);
+        return;
+      }
       if (msg.t === "answer") {
         const p = [...this.players.values()].find((x) => x.conn === conn);
-        if (!p || this.phase !== "question" || msg.qi !== this.qi || this.answers.has(p.key)) return;
+        if (!p || p.frozen || this.phase !== "question" || msg.qi !== this.qi || this.answers.has(p.key)) return;
         const choice = +msg.choice;
         if (!(choice >= 0 && choice < this.deck[this.qi].a.length)) return;
         this.answers.set(p.key, { choice, elapsed: (Date.now() - this.qStart) / 1000 });
@@ -378,7 +386,7 @@
           <button class="btn green" id="nextBtn" disabled>Mulai →</button>
         </div>
         <div id="players"></div>
-        <p class="foot" style="margin:auto auto 16px;text-align:center">Klik nama pemain untuk mengeluarkannya. ${SESSIONS} sesi × ${this.perSess} soal · ${this.time} detik/soal</p>`);
+        <p class="foot" style="margin:auto auto 16px;text-align:center">Klik nama pemain untuk mengeluarkannya. ${this.mode === "map" ? `🗺️ Balapan Peta · ${this.nQ} soal · ${this.time} detik/soal` : `🏆 Quiz Interaktif · ${SESSIONS} sesi × ${this.perSess} soal · ${this.time} detik/soal`}</p>`);
       try { new QRCode(document.getElementById("qr"), { text: this.joinUrl(), width: 192, height: 192, correctLevel: QRCode.CorrectLevel.M }); } catch {}
       document.getElementById("nextBtn").onclick = () => this.start();
       this.drawPlayers();
@@ -401,6 +409,7 @@
 
     // ---- Game ----
     start() {
+      if (this.mode === "map") return this.mStart();
       Music.stop();
       this.deck = buildDeck(this.nQ); this.qi = -1; this.lastPrev = null;
       for (const p of this.players.values()) { p.score = 0; p.streak = 0; p.sess = SESS.map(() => 0); p.move = 0; }
@@ -488,12 +497,12 @@
       const wait = list.filter((p) => !this.answers.has(p.key));
       box.innerHTML = `
         <div class="answered-head"><b>Sudah jawab ${done.length}/${list.length}</b><span>${wait.length ? `Menunggu ${wait.length} pemain…` : "Semua sudah jawab ✓"}</span></div>
-        <div class="answered-list">${done.map((p, i) => `<span class="ap done" title="Sudah jawab">${i === 0 ? "⚡" : "✓"} ${avHtml(p.av)} ${esc(p.name)} <small>${this.answers.get(p.key).elapsed.toFixed(1)}s</small></span>`).join("")}${wait.map((p) => `<span class="ap" title="Belum jawab">${avHtml(p.av)} ${esc(p.name)}</span>`).join("")}</div>`;
+        <div class="answered-list">${done.map((p, i) => `<span class="ap done" title="Sudah jawab">${i === 0 ? "⚡" : "✓"} ${avHtml(p.av)} ${esc(p.name)} <small>${this.answers.get(p.key).elapsed.toFixed(1)}s</small></span>`).join("")}${wait.map((p) => `<span class="ap${p.frozen ? " frz" : ""}" title="${p.frozen ? "Dibekukan" : "Belum jawab"}">${p.frozen ? "❄️ " : ""}${avHtml(p.av)} ${esc(p.name)}</span>`).join("")}</div>`;
     },
     checkAllAnswered() {
       if (this.phase !== "question") return;
-      const online = this.onlinePlayers();
-      if (online.length && online.every((p) => this.answers.has(p.key))) setTimeout(() => this.reveal(), 400);
+      const online = this.onlinePlayers().filter((p) => !p.frozen);
+      if (online.length && online.every((p) => this.answers.has(p.key))) setTimeout(() => (this.mode === "map" ? this.mReveal() : this.reveal()), 400);
     },
     rankOf() {
       const sorted = [...this.players.values()].sort((a, b) => b.score - a.score);
@@ -841,6 +850,7 @@
 
     onMsg(msg) {
       if (!msg || typeof msg !== "object") return;
+      if (this.mOnMsg && this.mOnMsg(msg)) return;
       switch (msg.t) {
         case "joined":
           if (!msg.ok) { toast(msg.err || "Gagal masuk"); this.nickname(); return; }
@@ -1035,7 +1045,11 @@
     },
   };
 
-  // ---------- Start ----------
+  // Dipakai mode Balapan Peta (map.js)
+  window.CQ = { Host, Player, render, esc, avHtml, cleanAv, Sfx, Music, toast, confetti, countdown, answerButtons, shuffle, pick, calcPoints, settingsCard, MEDALS };
+
+  // ---------- Start ---------- (tunggu semua script, termasuk map.js, selesai dimuat)
+  const boot = () => {
   const params = new URLSearchParams(location.search);
   const pinParam = (params.get("pin") || "").replace(/\D/g, "").slice(0, 6);
   if (typeof RoomPeer === "undefined" || typeof mqtt === "undefined") toast("Gagal memuat modul koneksi. Mode Solo tetap bisa dimainkan.", 5000);
@@ -1044,4 +1058,6 @@
     const saved = store.get("cq-name-" + pinParam);
     if (saved) Player.connect(pinParam, true); else home(pinParam);
   } else home();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
