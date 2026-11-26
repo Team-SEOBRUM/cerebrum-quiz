@@ -7,8 +7,8 @@ Materi soal diambil dari [Product Knowledge Center — Team SEOBRUM](https://pro
 1. **Host** buka website di laptop/proyektor → klik **🎤 Jadi Host** → pilih jumlah soal & waktu → **Buat Room**.
 2. Layar host menampilkan **PIN 6 digit** + QR code.
 3. **Pemain** buka website yang sama di HP → masukkan PIN (atau scan QR) → isi nama & pilih avatar.
-4. Host klik **Mulai**. Jawab secepat mungkin — makin cepat makin besar poinnya, jawab benar beruntun dapat bonus 🔥.
-5. Di akhir muncul podium juara 🥇🥈🥉.
+4. Host klik **Mulai**. Game dibagi **3 sesi** (Pemanasan ×1, Kejar-kejaran ×1.5, Penentuan ×2 poin) jadi yang tertinggal masih bisa menyalip. Jawab secepat mungkin — makin cepat makin besar poinnya, jawab benar beruntun dapat bonus 🔥.
+5. Setelah tiap soal muncul **papan peringkat** beranimasi (naik ▲ / turun ▼ dan selisih poin), di akhir tiap sesi ada klasemen + Bintang Sesi ⭐, dan di akhir muncul podium juara 🥇🥈🥉.
 
 Ada juga **🎯 Main Solo** untuk latihan sendiri tanpa PIN.
 

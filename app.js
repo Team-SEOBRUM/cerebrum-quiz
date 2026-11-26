@@ -22,6 +22,14 @@
   };
   const CHEERS_OK = ["Mantap! 🔥", "Keren banget! 😎", "Jenius! 🧠", "Gaspol! 🚀", "Sempurna! ✨"];
   const CHEERS_BAD = ["Yahh, hampir! 😅", "Gapapa, next! 💪", "Oops! 🙈", "Semangat lagi! ✊"];
+  // 3 sesi: poin makin besar tiap sesi, jadi yang tertinggal masih bisa menyalip
+  const SESS = [
+    { name: "Pemanasan", emoji: "🔥", mult: 1, desc: "Kumpulkan poin sebanyak-banyaknya buat modal awal!" },
+    { name: "Kejar-kejaran", emoji: "🏃", mult: 1.5, desc: "Poin naik jadi ×1.5 — saatnya menyalip lawan di depanmu!" },
+    { name: "Penentuan", emoji: "👑", mult: 2, desc: "Poin DOBEL ×2! Klasemen masih bisa berubah total." },
+  ];
+  const SESSIONS = SESS.length;
+  const MEDALS = ["🥇", "🥈", "🥉"];
 
   const $app = document.getElementById("app");
   const render = (html) => { $app.innerHTML = html; window.scrollTo(0, 0); };
@@ -166,16 +174,27 @@
   }
 
   // Pilihan pengaturan (dipakai host & solo)
-  function settingsCard(title, btnLabel, onGo) {
+  function settingsCard(title, btnLabel, onGo, { sessions = false } = {}) {
     const total = window.QUESTIONS.length;
-    const counts = [10, 15, 20].filter((n) => n < total).concat([total]);
-    let n = counts[0], t = 20;
+    let counts, n;
+    if (sessions) {
+      counts = [3, 5, 7, 10].filter((c) => c * SESSIONS <= total);
+      if (!counts.length) counts = [Math.max(1, Math.floor(total / SESSIONS))];
+      n = counts.includes(5) ? 5 : counts[counts.length - 1];
+    } else {
+      counts = [10, 15, 20].filter((c) => c < total).concat([total]);
+      n = counts[0];
+    }
+    let t = 20;
+    const label = (c) => sessions ? `${c} soal` : c === total ? `Semua (${c})` : c;
+    const sumText = () => `${SESSIONS} sesi × ${n} soal = <b>${n * SESSIONS} soal</b>. Poin: ${SESS.map((s, i) => `Sesi ${i + 1} ×${s.mult}`).join(" · ")}`;
     render(`
       <div class="center">
         <h1 class="logo">${title}</h1>
         <div class="card">
-          <b>Jumlah soal</b>
-          <div class="chips" id="cnt">${counts.map((c) => `<button class="chip${c === n ? " on" : ""}" data-v="${c}">${c === total ? `Semua (${c})` : c}</button>`).join("")}</div>
+          <b>${sessions ? `Soal per sesi (${SESSIONS} sesi)` : "Jumlah soal"}</b>
+          <div class="chips" id="cnt">${counts.map((c) => `<button class="chip${c === n ? " on" : ""}" data-v="${c}">${label(c)}</button>`).join("")}</div>
+          ${sessions ? `<div class="muted" id="sum">${sumText()}</div>` : ""}
           <b>Waktu per soal</b>
           <div class="chips" id="tm">${[10, 20, 30].map((s) => `<button class="chip${s === t ? " on" : ""}" data-v="${s}">${s} detik</button>`).join("")}</div>
           <button class="btn green" id="go">${btnLabel}</button>
@@ -186,7 +205,8 @@
       document.querySelectorAll(`#${id} .chip`).forEach((x) => x.classList.remove("on"));
       b.classList.add("on"); set(+b.dataset.v); Sfx.tick();
     });
-    bindChips("cnt", (v) => n = v); bindChips("tm", (v) => t = v);
+    bindChips("cnt", (v) => { n = v; const s = document.getElementById("sum"); if (s) s.innerHTML = sumText(); });
+    bindChips("tm", (v) => t = v);
     document.getElementById("go").onclick = (e) => { e.target.disabled = true; onGo(n, t); };
     document.getElementById("back").onclick = () => { history.replaceState(null, "", location.pathname); home(); };
   }
@@ -196,9 +216,12 @@
   // =========================================================
   const Host = {
     peer: null, pin: null, players: new Map(), deck: [], qi: -1, time: 20,
-    phase: "lobby", answers: new Map(), qStart: 0, stopTimer: null, nQ: 10,
+    phase: "lobby", answers: new Map(), qStart: 0, stopTimer: null, nQ: 15, perSess: 5, lastPrev: null,
 
-    setup() { settingsCard("Buat Room 🎤", "Buat Room", (n, t) => { this.nQ = n; this.time = t; this.open(); }); },
+    setup() {
+      settingsCard("Buat Room 🎤", "Buat Room", (n, t) => { this.perSess = n; this.nQ = n * SESSIONS; this.time = t; this.open(); }, { sessions: true });
+    },
+    sess(qi = this.qi) { return Math.min(SESSIONS - 1, Math.floor(Math.max(0, qi) / this.perSess)); },
 
     open(attempt = 0) {
       this.pin = String(Math.floor(100000 + Math.random() * 900000));
@@ -259,7 +282,7 @@
         }
         if (existing && existing.conn && existing.conn !== conn) { const old = existing.conn; existing.conn = null; try { old.close(); } catch {} }
         const av = AVATARS.includes(msg.av) ? msg.av : pick(AVATARS);
-        const p = existing || { key, name, av, score: 0, streak: 0 };
+        const p = existing || { key, name, av, score: 0, streak: 0, sess: SESS.map(() => 0), move: 0 };
         p.conn = conn; p.online = true; p.av = av; p.tok = msg.tok;
         this.players.set(key, p);
         conn.send({ t: "joined", ok: true, name: p.name, av: p.av, score: p.score, started: this.phase !== "lobby" });
@@ -296,7 +319,7 @@
           <button class="btn white" id="nextBtn" disabled>Mulai ▶</button>
         </div>
         <div id="players"></div>
-        <p class="foot" style="margin:auto auto 16px;text-align:center">Klik nama pemain untuk mengeluarkannya. ${this.deck.length || this.nQ} soal · ${this.time} detik/soal</p>`);
+        <p class="foot" style="margin:auto auto 16px;text-align:center">Klik nama pemain untuk mengeluarkannya. ${SESSIONS} sesi × ${this.perSess} soal · ${this.time} detik/soal</p>`);
       try { new QRCode(document.getElementById("qr"), { text: this.joinUrl(), width: 192, height: 192, correctLevel: QRCode.CorrectLevel.M }); } catch {}
       document.getElementById("nextBtn").onclick = () => this.start();
       this.drawPlayers();
@@ -320,25 +343,61 @@
     // ---- Game ----
     start() {
       Music.stop();
-      this.deck = buildDeck(this.nQ); this.qi = -1;
-      for (const p of this.players.values()) { p.score = 0; p.streak = 0; }
-      this.phase = "countdown";
-      this.onlinePlayers().forEach((p) => this.send(p, { t: "getready", total: this.deck.length }));
-      render(`<div class="center"><div class="title-pill">Siap-siap! 🚀</div><div class="big-emoji" id="cd" style="font-size:140px">3</div><p>${this.deck.length} soal seputar Cerebrum</p></div>`);
-      let n = 3; Sfx.tickLow();
-      const id = setInterval(() => {
-        n--; if (n > 0) { document.getElementById("cd").textContent = n; Sfx.tickLow(); }
-        else { clearInterval(id); this.next(); }
-      }, 1000);
+      this.deck = buildDeck(this.nQ); this.qi = -1; this.lastPrev = null;
+      for (const p of this.players.values()) { p.score = 0; p.streak = 0; p.sess = SESS.map(() => 0); p.move = 0; }
+      this.onlinePlayers().forEach((p) => this.send(p, { t: "getready", total: this.deck.length, sessions: SESSIONS, per: this.perSess }));
+      this.sessionIntro(0);
+    },
+
+    // Layar pembuka tiap sesi
+    sessionIntro(s) {
+      this.phase = "intro";
+      const info = SESS[s];
+      const { sorted, rank } = this.rankOf();
+      const lead = sorted[0];
+      this.onlinePlayers().forEach((p) => this.send(p, {
+        t: "session", s, n: SESSIONS, name: info.name, emoji: info.emoji, mult: info.mult, per: this.perSess,
+        rank: s > 0 ? rank(p) : null, gapLead: s > 0 && lead ? lead.score - p.score : 0,
+      }));
+      const top = s > 0 ? sorted.slice(0, 3) : [];
+      render(`
+        <div class="center">
+          ${this.sessSteps(s)}
+          <div class="title-pill">Sesi ${s + 1}: ${info.name}</div>
+          <div class="big-emoji" id="cd">${info.emoji}</div>
+          <div class="mult-pill">Poin ×${info.mult}</div>
+          <p style="font-size:clamp(18px,2.4vw,24px);margin:0">${info.desc}</p>
+          ${top.length ? `<div class="mini-top">${top.map((p, i) => `<span>${MEDALS[i]} ${p.av} ${esc(p.name)} <b>${p.score}</b></span>`).join("")}</div>
+            ${sorted.length > 1 ? `<p class="foot">Selisih #1 dan #2: <b>${sorted[0].score - sorted[1].score}</b> poin — dengan poin ×${info.mult}, satu jawaban cepat bisa membalik keadaan!</p>` : ""}` : ""}
+        </div>
+        <div class="host-actions"><button class="btn white" id="nextBtn">Mulai Sesi ${s + 1} ▶</button></div>`);
+      if (s === 0) Sfx.go(); else Sfx.gong();
+      const btn = document.getElementById("nextBtn");
+      btn.onclick = () => {
+        btn.disabled = true; this.phase = "countdown";
+        const cd = document.getElementById("cd"); let n = 3;
+        cd.style.fontSize = "140px"; cd.textContent = n; Sfx.tickLow();
+        const id = setInterval(() => {
+          n--; if (n > 0) { cd.textContent = n; Sfx.tickLow(); }
+          else { clearInterval(id); this.next(); }
+        }, 1000);
+      };
+    },
+    sessSteps(s) {
+      return `<div class="sess-steps">${SESS.map((x, i) => `<span class="sess-step${i < s ? " done" : i === s ? " on" : ""}">${i < s ? "✔ " : ""}Sesi ${i + 1} · ×${x.mult}</span>`).join("")}</div>`;
     },
     questionMsg() {
-      const q = this.deck[this.qi];
-      return { t: "question", qi: this.qi, total: this.deck.length, q: q.q, a: q.a, time: this.time, left: Math.max(1, Math.round(this.time - (Date.now() - this.qStart) / 1000)) };
+      const q = this.deck[this.qi]; const s = this.sess();
+      return {
+        t: "question", qi: this.qi, total: this.deck.length, q: q.q, a: q.a, time: this.time,
+        left: Math.max(1, Math.round(this.time - (Date.now() - this.qStart) / 1000)),
+        s, qs: this.qi % this.perSess, per: this.perSess, mult: SESS[s].mult,
+      };
     },
     next() {
       this.qi++;
       if (this.qi >= this.deck.length) return this.finish();
-      const q = this.deck[this.qi];
+      const q = this.deck[this.qi]; const s = this.sess();
       this.phase = "question"; this.answers = new Map(); this.qStart = Date.now();
       render(`
         <div class="q-head">${esc(q.q)}</div>
@@ -348,7 +407,7 @@
           <div class="ans-count"><b id="ansNum">0</b>Jawaban</div>
         </div>
         ${answerButtons(q)}
-        <div class="q-progress">${this.qi + 1} / ${this.deck.length} · PIN ${this.pin}</div>
+        <div class="q-progress">Sesi ${s + 1} · Soal ${(this.qi % this.perSess) + 1}/${this.perSess} · Poin ×${SESS[s].mult} · PIN ${this.pin}</div>
         <div class="host-actions"><button class="btn white" id="nextBtn">Lewati ⏭</button></div>`);
       document.getElementById("nextBtn").onclick = () => this.reveal();
       this.onlinePlayers().forEach((p) => this.send(p, this.questionMsg()));
@@ -371,7 +430,11 @@
     reveal() {
       if (this.phase !== "question") return;
       this.phase = "reveal"; this.stopTimer && this.stopTimer();
-      const q = this.deck[this.qi];
+      const q = this.deck[this.qi]; const s = this.sess(); const mult = SESS[s].mult;
+      // simpan posisi sebelum soal ini untuk animasi kejar-kejaran
+      const before = this.rankOf().sorted;
+      const hadScore = before.some((p) => p.score > 0);
+      this.lastPrev = { rank: new Map(before.map((p, i) => [p.key, i + 1])), score: new Map(before.map((p) => [p.key, p.score])) };
       const counts = q.a.map(() => 0);
       const gained = new Map();
       for (const p of this.players.values()) {
@@ -379,18 +442,22 @@
         if (ans) counts[ans.choice]++;
         if (ans && ans.choice === q.c) {
           p.streak++;
-          const pts = calcPoints(ans.elapsed, this.time) + Math.min(p.streak - 1, 5) * 100;
-          p.score += pts; gained.set(p.key, pts);
+          const pts = Math.round((calcPoints(ans.elapsed, this.time) + Math.min(p.streak - 1, 5) * 100) * mult);
+          p.score += pts; p.sess[s] += pts; gained.set(p.key, pts);
         } else p.streak = 0;
       }
       const { sorted, rank } = this.rankOf();
       for (const p of this.players.values()) {
+        p.move = hadScore ? this.lastPrev.rank.get(p.key) - rank(p) : 0;
         const ans = this.answers.get(p.key);
         const idx = sorted.indexOf(p);
         const ahead = idx > 0 ? sorted[idx - 1] : null;
+        const behindMe = sorted[idx + 1];
         this.send(p, {
           t: "result", answered: !!ans, correct: !!ans && ans.choice === q.c, gained: gained.get(p.key) || 0,
-          score: p.score, rank: rank(p), streak: p.streak, behind: ahead ? { name: ahead.name, gap: ahead.score - p.score } : null,
+          score: p.score, rank: rank(p), total: sorted.length, streak: p.streak, move: p.move, mult, s,
+          behind: ahead ? { name: ahead.name, gap: ahead.score - p.score } : null,
+          chaser: idx === 0 && behindMe ? { name: behindMe.name, gap: p.score - behindMe.score } : null,
           right: q.a[q.c],
         });
       }
@@ -406,7 +473,7 @@
         </div>
         ${q.f ? `<div class="fact">💡 ${esc(q.f)}</div>` : ""}
         ${answerButtons(q)}
-        <div class="host-actions"><button class="btn white" id="nextBtn">Lanjut ▶</button></div>`);
+        <div class="host-actions"><button class="btn white" id="nextBtn">Papan Peringkat 🏆</button></div>`);
       document.querySelectorAll(".answers .ans").forEach((el, i) => {
         if (i === q.c) { el.classList.add("right"); el.querySelector(".check").textContent = "✔"; }
         else { el.classList.add("dim"); el.querySelector(".check").textContent = "✖"; }
@@ -415,27 +482,111 @@
       Sfx.gong();
       document.getElementById("nextBtn").onclick = () => this.leaderboard();
     },
+
+    // Papan peringkat setelah tiap soal — baris bergeser naik/turun (kejar-kejaran)
     leaderboard() {
       this.phase = "leaderboard";
-      const last = this.qi + 1 >= this.deck.length;
-      if (last) return this.finish();
+      const s = this.sess();
+      const endOfSess = (this.qi + 1) % this.perSess === 0 || this.qi + 1 >= this.deck.length;
       const { sorted } = this.rankOf();
+      const shown = sorted.slice(0, 8);
+      const prev = this.lastPrev;
+      const row = (p, i) => {
+        const ahead = i > 0 ? sorted[i - 1] : null;
+        const mv = p.move > 0 ? `<span class="mv up">▲${p.move}</span>` : p.move < 0 ? `<span class="mv down">▼${-p.move}</span>` : `<span class="mv same">•</span>`;
+        const gap = !ahead ? `<small class="lb-gap lead">👑 Memimpin</small>`
+          : ahead.score === p.score ? `<small class="lb-gap">Seri dengan #${i}</small>`
+          : `<small class="lb-gap">−${ahead.score - p.score} dari #${i}</small>`;
+        const from = prev ? prev.score.get(p.key) ?? 0 : p.score;
+        return `<div class="lb-row flip${p.move > 0 ? " rising" : ""}" data-k="${esc(p.key)}">
+            <span class="lb-rank">${i < 3 ? MEDALS[i] : i + 1}</span>
+            <span class="lb-name">${p.av} ${esc(p.name)}${p.streak >= 2 ? `<span class="streak">🔥${p.streak}</span>` : ""}</span>
+            ${mv}
+            <span class="lb-right"><span class="lb-score" data-from="${from}" data-to="${p.score}">${from}</span>${gap}</span>
+          </div>`;
+      };
       render(`
-        <div class="center" style="justify-content:flex-start;padding-top:28px">
-          <div class="title-pill">🏆 Papan Skor</div>
-          <div class="lb">${sorted.slice(0, 5).map((p, i) => `
-            <div class="lb-row" style="animation-delay:${i * .08}s">
-              <span>${i + 1}. ${p.av} ${esc(p.name)}${p.streak >= 2 ? `<span class="streak">🔥${p.streak}</span>` : ""}</span><span>${p.score}</span>
-            </div>`).join("") || `<p>Belum ada pemain.</p>`}
-          </div>
+        <div class="center" style="justify-content:flex-start;padding-top:24px">
+          ${this.sessSteps(s)}
+          <div class="title-pill">🏆 Papan Peringkat</div>
+          <div class="lb-sub">Sesi ${s + 1} · Soal ${(this.qi % this.perSess) + 1}/${this.perSess} · Poin ×${SESS[s].mult}</div>
+          <div class="lb" id="lb">${shown.map(row).join("") || `<p>Belum ada pemain.</p>`}</div>
+          ${sorted.length > shown.length ? `<p class="foot">+${sorted.length - shown.length} pemain lainnya — cek HP masing-masing untuk peringkatmu</p>` : ""}
         </div>
-        <div class="host-actions"><button class="btn white" id="nextBtn">Soal berikutnya ▶</button></div>`);
-      document.getElementById("nextBtn").onclick = () => this.next();
+        <div class="host-actions"><button class="btn white" id="nextBtn">${endOfSess ? `Hasil Sesi ${s + 1} 🏁` : "Soal berikutnya ▶"}</button></div>`);
+      this.animateLb(prev);
+      document.getElementById("nextBtn").onclick = () => endOfSess ? this.sessionEnd(s) : this.next();
+    },
+    animateLb(prev) {
+      const rows = [...document.querySelectorAll("#lb .lb-row")];
+      if (!rows.length) return;
+      const h = rows[0].offsetHeight + 10;
+      rows.forEach((r, i) => {
+        const old = prev ? prev.rank.get(r.dataset.k) : null;
+        const from = old ? Math.min(old, rows.length + 1) - 1 : i;
+        r.style.transition = "none";
+        r.style.transform = `translateY(${(from - i) * h}px)`;
+      });
+      void document.body.offsetHeight;
+      setTimeout(() => {
+        rows.forEach((r) => { r.style.transition = "transform .9s cubic-bezier(.3,1.2,.4,1)"; r.style.transform = "translateY(0)"; });
+        if (rows.some((r) => r.classList.contains("rising"))) Sfx.join();
+      }, 450);
+      // hitung naik skor
+      const els = [...document.querySelectorAll("#lb .lb-score")];
+      const t0 = performance.now() + 300, dur = 1000;
+      (function step(now) {
+        const k = Math.max(0, Math.min(1, (now - t0) / dur));
+        els.forEach((e) => { const a = +e.dataset.from, b = +e.dataset.to; e.textContent = Math.round(a + (b - a) * k); });
+        if (k < 1 && document.body.contains(els[0])) requestAnimationFrame(step);
+      })(performance.now());
+    },
+    standingsTable(sorted, upto) {
+      const cols = SESS.slice(0, upto + 1);
+      return `<div class="st-wrap"><table class="st">
+        <thead><tr><th>#</th><th class="nm">Pemain</th>${cols.map((_, i) => `<th>Sesi ${i + 1}</th>`).join("")}<th>Total</th></tr></thead>
+        <tbody>${sorted.map((p, i) => `<tr${i < 3 ? ` class="top${i + 1}"` : ""}>
+          <td>${i < 3 ? MEDALS[i] : i + 1}</td><td class="nm">${p.av} ${esc(p.name)}</td>
+          ${cols.map((_, j) => `<td>${p.sess[j] || 0}</td>`).join("")}<td class="tot">${p.score}</td></tr>`).join("")}</tbody>
+      </table></div>`;
+    },
+
+    // Akhir tiap sesi: klasemen lengkap + bintang sesi
+    sessionEnd(s) {
+      this.phase = "sessionEnd";
+      const last = s + 1 >= SESSIONS;
+      const { sorted, rank } = this.rankOf();
+      const bySess = [...this.players.values()].sort((a, b) => b.sess[s] - a.sess[s]);
+      const star = bySess[0] && bySess[0].sess[s] > 0 ? bySess[0] : null;
+      for (const p of this.players.values()) {
+        const idx = sorted.indexOf(p); const ahead = idx > 0 ? sorted[idx - 1] : null;
+        this.send(p, {
+          t: "sessionEnd", s, n: SESSIONS, rank: rank(p), total: sorted.length, sessPts: p.sess[s], sessRank: bySess.indexOf(p) + 1,
+          score: p.score, ahead: ahead ? { name: ahead.name, gap: ahead.score - p.score } : null,
+          next: last ? null : { name: SESS[s + 1].name, mult: SESS[s + 1].mult }, star: star ? star.name : null,
+        });
+      }
+      if (last) return this.finish();
+      render(`
+        <div class="center" style="justify-content:flex-start;padding-top:24px">
+          ${this.sessSteps(s + 1)}
+          <div class="title-pill">🏁 Sesi ${s + 1} Selesai!</div>
+          ${star ? `<div class="star-card">⭐ Bintang Sesi ${s + 1}: <b>${star.av} ${esc(star.name)}</b> (+${star.sess[s]} poin)</div>` : ""}
+          ${this.standingsTable(sorted, s)}
+          <p class="foot">Berikutnya: <b>Sesi ${s + 2} — ${SESS[s + 1].name}</b>, poin ×${SESS[s + 1].mult}. Masih ada kesempatan menyalip! 🏃</p>
+        </div>
+        <div class="host-actions"><button class="btn white" id="nextBtn">Lanjut ke Sesi ${s + 2} ▶</button></div>`);
+      Sfx.fanfare(); if (star) confetti(2000);
+      document.getElementById("nextBtn").onclick = () => this.sessionIntro(s + 1);
     },
     finish() {
       this.phase = "end"; this.stopTimer && this.stopTimer();
       const { sorted, rank } = this.rankOf();
-      for (const p of this.players.values()) this.send(p, { t: "end", rank: rank(p), score: p.score, total: sorted.length });
+      for (const p of this.players.values()) this.send(p, { t: "end", rank: rank(p), score: p.score, total: sorted.length, sess: p.sess });
+      const stars = SESS.map((_, s) => {
+        const best = [...this.players.values()].sort((a, b) => b.sess[s] - a.sess[s])[0];
+        return best && best.sess[s] > 0 ? `<span>⭐ Sesi ${s + 1}: ${best.av} ${esc(best.name)}</span>` : "";
+      }).join("");
       const slot = (p, cls, medal) => p ? `
         <div class="pod ${cls}">
           <div class="pod-name">${p.av}<br>${esc(p.name)}</div>
@@ -445,17 +596,18 @@
         <div class="center" style="justify-content:flex-start;padding-top:28px">
           <div class="title-pill">🎉 Juara Cerebrum Quiz</div>
           <div class="podium">${slot(sorted[1], "p2", "🥈")}${slot(sorted[0], "p1", "🥇")}${slot(sorted[2], "p3", "🥉")}</div>
+          ${stars ? `<div class="mini-top">${stars}</div>` : ""}
           <div class="row">
-            <button class="btn white" id="allBtn">📋 Semua skor</button>
+            <button class="btn white" id="allBtn">📋 Klasemen akhir</button>
             <button class="btn green" id="againBtn">🔁 Main lagi</button>
             <button class="btn ghost" id="homeBtn">Selesai</button>
           </div>
-          <div class="lb" id="allLb" hidden></div>
+          <div id="allLb" hidden style="width:100%;display:flex;justify-content:center"></div>
         </div>`);
       setTimeout(() => { Sfx.fanfare(); confetti(4500); }, 1900);
       document.getElementById("allBtn").onclick = () => {
         const box = document.getElementById("allLb"); box.hidden = !box.hidden;
-        box.innerHTML = sorted.map((p, i) => `<div class="lb-row"><span>${i + 1}. ${p.av} ${esc(p.name)}</span><span>${p.score}</span></div>`).join("");
+        box.innerHTML = this.standingsTable(sorted, SESSIONS - 1);
       };
       document.getElementById("againBtn").onclick = () => {
         for (const p of this.players.values()) this.send(p, { t: "lobby" });
@@ -572,7 +724,18 @@
           Sfx.join();
           this.waiting("Kamu sudah masuk! 🎉", msg.started ? "Game sedang berjalan, tunggu soal berikutnya…" : "Lihat namamu di layar host 👀<br>Tunggu host memulai game.", "✅");
           break;
-        case "getready": this.total = msg.total; this.score = 0; this.waiting("Siap-siap!", `${msg.total} soal seputar Cerebrum. Jawab secepat mungkin ⚡`, "🚀"); Sfx.go(); break;
+        case "getready":
+          this.total = msg.total; this.score = 0;
+          this.waiting("Siap-siap!", `${msg.sessions || SESSIONS} sesi × ${msg.per || "?"} soal seputar Cerebrum.<br>Poin makin besar tiap sesi (${SESS.map((s) => "×" + s.mult).join(" → ")}) — yang tertinggal masih bisa menyalip! ⚡`, "🚀");
+          Sfx.go(); break;
+        case "session": {
+          const info = msg.rank
+            ? msg.rank === 1 ? `Kamu memimpin! 👑 Pertahankan posisimu.` : `Kamu di peringkat <b>#${msg.rank}</b>, ${msg.gapLead} poin di belakang pemimpin. Kejar! 🏃`
+            : "Jawab cepat & benar untuk modal poin awal!";
+          this.waiting(`Sesi ${msg.s + 1}: ${esc(msg.name)}`, `Poin ×${msg.mult} · ${msg.per} soal<br>${info}`, msg.emoji || "🎮");
+          Sfx.go(); break;
+        }
+        case "sessionEnd": this.sessionEnd(msg); break;
         case "question": this.question(msg); break;
         case "ack": this.waiting("Jawaban terkirim!", "Semoga benar… 🤞", pick(["🤞", "🙏", "😬", "🤔"])); break;
         case "result": this.result(msg); break;
@@ -587,7 +750,7 @@
     question(m) {
       this.qi = m.qi;
       render(`
-        <div class="p-top"><span>${m.qi + 1} / ${m.total}</span><span id="pt">⏱ ${m.left}</span></div>
+        <div class="p-top"><span>${m.s != null ? `Sesi ${m.s + 1} · ${m.qs + 1}/${m.per} <span class="mult-tag">×${m.mult}</span>` : `${m.qi + 1} / ${m.total}`}</span><span id="pt">⏱ ${m.left}</span></div>
         <div class="p-q">${esc(m.q)}</div>
         ${answerButtons({ a: m.a }, { clickable: true, cls: "p-answers" })}
         <div class="p-bottom"><span>${this.av} ${esc(this.name)}</span><span class="score-tag">${this.score}</span></div>`);
@@ -615,10 +778,12 @@
           <div class="big-emoji">${ok ? "✅" : "❌"}</div>
           <h2 class="result-title">${ok ? "Benar!" : "Salah"}</h2>
           <div>${sub}</div>
-          ${ok ? `<div class="points-pill">+${m.gained}</div>` : `<div style="opacity:.9">Jawaban: <b>${esc(m.right)}</b></div>`}
+          ${ok ? `<div class="points-pill">+${m.gained}${m.mult > 1 ? ` <small>(×${m.mult})</small>` : ""}</div>` : `<div style="opacity:.9">Jawaban: <b>${esc(m.right)}</b></div>`}
           ${m.streak >= 2 ? `<div>🔥 Beruntun ${m.streak}x!</div>` : ""}
-          <div style="font-size:20px">Kamu di peringkat <b>#${m.rank}</b></div>
-          ${m.behind ? `<div style="opacity:.9">${m.behind.gap} poin di belakang ${esc(m.behind.name)}</div>` : m.rank === 1 ? `<div>👑 Kamu memimpin!</div>` : ""}
+          <div style="font-size:20px">Kamu di peringkat <b>#${m.rank}</b>${m.total ? ` dari ${m.total}` : ""}</div>
+          ${m.move > 0 ? `<div class="mv-pill up">▲ Naik ${m.move} peringkat!</div>` : m.move < 0 ? `<div class="mv-pill down">▼ Turun ${-m.move} peringkat</div>` : ""}
+          ${m.behind ? `<div style="opacity:.9">${m.behind.gap === 0 ? `Seri dengan ${esc(m.behind.name)}!` : `${m.behind.gap} poin lagi untuk menyalip ${esc(m.behind.name)} 🏃`}</div>`
+            : m.rank === 1 ? `<div>👑 Kamu memimpin!${m.chaser ? ` ${esc(m.chaser.name)} mengejar, selisih ${m.chaser.gap} poin` : ""}</div>` : ""}
         </div>
         <div class="p-bottom"><span>${esc(this.name)}</span><span class="score-tag">${this.score}</span></div>`);
       ok ? Sfx.correct() : Sfx.wrong();
@@ -634,9 +799,29 @@
           <div class="title-pill">Peringkat #${m.rank} dari ${m.total}</div>
           <h2 style="margin:0">${msg}</h2>
           <div class="points-pill">${m.score} poin</div>
+          ${Array.isArray(m.sess) ? `<div class="mini-top">${m.sess.map((v, i) => `<span>Sesi ${i + 1}: <b>${v}</b></span>`).join("")}</div>` : ""}
           <p class="foot">Lihat podium di layar host 👀</p>
         </div>`);
       if (m.rank <= 3) { Sfx.fanfare(); confetti(); }
+    },
+    sessionEnd(m) {
+      this.stopTimer && this.stopTimer();
+      this.score = m.score;
+      if (!m.next) { this.waiting("Semua sesi selesai! 🏁", "Menghitung juara…", "🥁"); return; }
+      const iStar = m.star && m.star === this.name;
+      render(`
+        <div class="p-top"><span>${this.av} ${esc(this.name)}</span><span>PIN ${esc(this.pin)}</span></div>
+        <div class="center">
+          <div class="big-emoji">${iStar ? "⭐" : MEDALS[m.rank - 1] || "🏁"}</div>
+          <div class="title-pill">Sesi ${m.s + 1} selesai</div>
+          <div style="font-size:22px">Peringkat <b>#${m.rank}</b> dari ${m.total}</div>
+          <div class="points-pill">+${m.sessPts} poin di sesi ini</div>
+          ${iStar ? `<div>Kamu <b>Bintang Sesi ${m.s + 1}</b>! ⭐</div>` : `<div style="opacity:.9">Peringkat sesi ini: #${m.sessRank}</div>`}
+          ${m.ahead ? `<div>${m.ahead.gap} poin lagi untuk menyalip ${esc(m.ahead.name)}</div>` : `<div>👑 Kamu memimpin klasemen!</div>`}
+          <p class="foot">Berikutnya Sesi ${m.s + 2}: ${esc(m.next.name)} — poin ×${m.next.mult} 🏃</p>
+        </div>
+        <div class="p-bottom"><span>${esc(this.name)}</span><span class="score-tag">${this.score}</span></div>`);
+      if (iStar || m.rank <= 3) Sfx.fanfare(); else Sfx.gong();
     },
   };
 
