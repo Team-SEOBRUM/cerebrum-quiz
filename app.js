@@ -9,17 +9,6 @@
   const PREFIX = "cbrquiz-v1-";
   const SHAPES = ["A", "B", "C", "D"];
   const AVATARS = ["🦊", "🐼", "🐯", "🐸", "🐵", "🦁", "🐧", "🐙", "🦄", "🐨", "🐶", "🐱"];
-  const PEER_OPTS = {
-    debug: 0,
-    config: {
-      iceServers: [
-        { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
-        // TURN bawaan PeerJS — penting agar HP di jaringan berbeda (data seluler, Wi-Fi kantor) tetap tersambung
-        { urls: ["turn:eu-0.turn.peerjs.com:3478", "turn:us-0.turn.peerjs.com:3478"], username: "peerjs", credential: "peerjsp" },
-      ],
-      sdpSemantics: "unified-plan",
-    },
-  };
   const CHEERS_OK = ["Mantap! 🔥", "Keren banget! 😎", "Jenius! 🧠", "Gaspol! 🚀", "Sempurna! ✨"];
   const CHEERS_BAD = ["Yahh, hampir! 😅", "Gapapa, next! 💪", "Oops! 🙈", "Semangat lagi! ✊"];
   // 3 sesi: poin makin besar tiap sesi, jadi yang tertinggal masih bisa menyalip
@@ -249,7 +238,7 @@
     open(attempt = 0) {
       this.pin = String(Math.floor(100000 + Math.random() * 900000));
       render(`<div class="center"><div class="spinner"></div><p>Membuat room…</p></div>`);
-      const peer = new Peer(PREFIX + this.pin, PEER_OPTS);
+      const peer = new RoomPeer(PREFIX + this.pin);
       this.peer = peer;
       peer.on("open", () => { this.lobby(); this.keepAwake(); });
       peer.on("connection", (conn) => this.onConn(conn));
@@ -659,16 +648,17 @@
       this.pin = pin;
       render(`<div class="center"><div class="spinner"></div><p>Mencari room ${esc(pin)}…</p></div>`);
       try { this.peer && this.peer.destroy(); } catch {}
-      const peer = new Peer(undefined, PEER_OPTS); this.peer = peer;
+      const peer = new RoomPeer(); this.peer = peer;
       let done = false;
       const fail = (msg) => {
         if (done) return; done = true; clearTimeout(timer);
         try { peer.destroy(); } catch {}
         toast(msg, 3500); home(pin);
       };
-      const timer = setTimeout(() => fail("Room tidak ditemukan / koneksi lambat. Cek PIN lalu coba lagi."), 15000);
+      const timer = setTimeout(() => fail("Room tidak ditemukan / koneksi lambat. Cek PIN lalu coba lagi."), 25000);
       peer.on("error", (err) => {
-        if (err.type === "peer-unavailable") fail("PIN tidak ditemukan 🤔 Pastikan PIN benar.");
+        if (err.type === "peer-unavailable") fail("PIN tidak ditemukan 🤔 Pastikan PIN benar & host masih membuka room.");
+        else if (err.type === "network") fail("Tidak bisa terhubung ke server game. Cek internet lalu coba lagi.");
         else if (!this.conn || !this.conn.open) fail("Koneksi gagal. Coba lagi ya.");
       });
       peer.on("open", () => {
@@ -939,7 +929,7 @@
   // ---------- Start ----------
   const params = new URLSearchParams(location.search);
   const pinParam = (params.get("pin") || "").replace(/\D/g, "").slice(0, 6);
-  if (typeof Peer === "undefined") toast("Gagal memuat modul koneksi. Mode Solo tetap bisa dimainkan.", 5000);
+  if (typeof RoomPeer === "undefined" || typeof mqtt === "undefined") toast("Gagal memuat modul koneksi. Mode Solo tetap bisa dimainkan.", 5000);
   if (params.has("host")) Host.setup();
   else if (pinParam.length === 6) {
     const saved = store.get("cq-name-" + pinParam);
