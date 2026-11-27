@@ -24,7 +24,8 @@
   const NS = "seobrum/cerebrum-quiz/v2/";
   const PING_MS = 6000;          // pemain kirim detak tiap 6 detik
   const HOST_TIMEOUT_MS = 25000; // host anggap pemain putus kalau 25 detik tanpa kabar
-  const ROOM_WAIT_MS = 7000;     // pemain menunggu info room selama ini
+  const ROOM_WAIT_MS = 8000;     // pemain menunggu info room di server utama
+  const ROOM_WAIT_FALLBACK_MS = 5000; // ... dan di server cadangan
 
   const rid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
   const enc = (o) => JSON.stringify(o);
@@ -161,13 +162,23 @@
         (m) => this.client && this.client.publish(upT, enc(m), { qos: 1 }),
         () => { if (this.client) { this.client.publish(upT, enc({ t: "_bye" }), { qos: 1 }); setTimeout(() => this.destroy(), 300); } },
       );
-      connectBroker(
+      // Cari room di server utama; kalau tidak ada (mis. jaringan host memakai server cadangan),
+      // cari juga di server berikutnya sebelum menyatakan "PIN tidak ditemukan".
+      const tryFrom = (start) => connectBroker(
         { will: { topic: upT, payload: enc({ t: "_bye" }), qos: 1, retain: false } },
-        (client) => {
+        (client, bi) => {
           if (this.destroyed) { client.end(true); return; }
           this.client = client;
           let found = false, first = true;
-          const notFound = setTimeout(() => { if (!found) this.emit("error", { type: "peer-unavailable" }); }, ROOM_WAIT_MS);
+          const notFound = setTimeout(() => {
+            if (found || this.destroyed) return;
+            if (bi + 1 < BROKERS.length) {
+              clearInterval(this._ping); this.client = null;
+              try { client.end(true); } catch {}
+              this.emit("searching", bi + 1);
+              tryFrom(bi + 1);
+            } else this.emit("error", { type: "peer-unavailable" });
+          }, bi === 0 ? ROOM_WAIT_MS : ROOM_WAIT_FALLBACK_MS);
           client.on("message", (topic, payload) => {
             const m = dec(payload);
             if (topic === roomT) {
@@ -192,10 +203,12 @@
           this._ping = setInterval(() => { if (conn.open) client.publish(upT, enc({ t: "_ping" }), { qos: 0 }); }, PING_MS);
           // Putus sambungan broker di tengah game -> anggap koneksi terputus (pemain bisa sambung lagi)
           client.on("connect", () => { if (!first) conn._drop(); first = false; });
-          client.on("offline", () => conn._drop());
+          client.on("offline", () => { if (found) conn._drop(); });
         },
-        () => this.emit("error", { type: "network" }),
+        () => this.emit("error", { type: start > 0 ? "peer-unavailable" : "network" }),
+        start,
       );
+      tryFrom(0);
       return conn;
     }
 

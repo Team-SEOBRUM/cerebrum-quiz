@@ -35,6 +35,9 @@
     const o = shuffle(q.a.map((_, i) => i));
     return { ...q, a: o.map((i) => q.a[i]), c: o.indexOf(q.c) };
   };
+  // Tema luar angkasa: hiasan planet/benda langit di petak tertentu (murni dekorasi)
+  const SPACE_DECOR = { 3: "🌑", 6: "☄️", 9: "🪐", 13: "🛰️", 17: "🌕", 21: "🌌", 24: "☄️", 28: "🪐", 32: "🌠", 36: "🌑", 38: "🛰️" };
+  const spaceOn = (on) => document.body.classList.toggle("space", !!on);
   const ensure = (p) => {
     if (p.pos == null) Object.assign(p, { pos: 0, prevPos: 0, inv: [], shield: false, frozen: false, frozenNext: false, clueNext: false, correct: 0, score: p.score || 0, streak: 0 });
     return p;
@@ -114,6 +117,7 @@
   };
 
   Host.mStart = function () {
+    spaceOn(true);
     Music.stop();
     this.deck = buildMapDeck(); this.nQ = this.deck.length; this.qi = -1; this.feed = []; this.winner = null;
     for (const p of this.players.values()) { p.pos = null; p.score = 0; ensure(p); }
@@ -122,7 +126,7 @@
     render(`
       <div class="center">
         <div class="kicker">Mode Balapan Peta</div>
-        <div class="title-pill">🗺️ Siap balapan!</div>
+        <div class="title-pill">🚀 Siap meluncur!</div>
         <div class="big-emoji" id="cd">🏁</div>
         <div class="mini-top">
           <span>✅ Benar +1</span><span>🔥 HOTS +1</span><span>⚡ Tercepat +1</span>
@@ -305,7 +309,7 @@
       const here = occ.get(t) || [];
       const dir = t === GOAL ? "" : (row % 2 === 0 ? (ci === COLS - 1 ? "↓" : "→") : (ci === COLS - 1 ? "↓" : "←"));
       html += `<div class="tile${t === 0 ? " start" : ""}${t === GOAL ? " goal" : ""}${t % 5 === 0 && t && t !== GOAL ? " cp" : ""}" style="grid-row:${row + 1};grid-column:${col + 1}">
-        <span class="tn">${t === 0 ? "START" : t === GOAL ? "🏁 FINISH" : t}</span><span class="dir">${dir}</span>
+        ${SPACE_DECOR[t] ? `<span class="decor">${SPACE_DECOR[t]}</span>` : ""}<span class="tn">${t === 0 ? "🚀 LAUNCH" : t === GOAL ? "🛸 FINISH" : t}</span><span class="dir">${dir}</span>
         <div class="toks">${here.slice(0, 5).map((p) => `<span class="tok${p.prevPos !== p.pos ? " hop" : ""}${p.shield ? " sh" : ""}" title="${esc(p.name)}">${avHtml(p.av)}</span>`).join("")}${here.length > 5 ? `<span class="more">+${here.length - 5}</span>` : ""}</div>
       </div>`;
     }
@@ -327,7 +331,7 @@
     render(`
       <div class="map-screen">
         <div class="map-head">
-          <div class="title-pill">🗺️ Peta Balapan</div>
+          <div class="title-pill">🚀 Peta Galaksi</div>
           <div class="lb-sub">Soal ${this.qi + 1}/${this.deck.length} · Tujuan petak ${GOAL} 🏁${this.winner ? ` · 🏆 ${esc(this.winner.name)} finish!` : ""}</div>
         </div>
         <div class="map-wrap">
@@ -388,6 +392,7 @@
     Sfx.join();
     this.mFeed(text, true);
     if (this.phase === "board") this.mBoard();
+    else { const rows = this.mRows(); for (const x of this.players.values()) this.send(x, { t: "mrows", rows, pos: x.pos }); }
   };
 
   Host.mFinish = function () {
@@ -421,7 +426,7 @@
     document.getElementById("againBtn").onclick = () => {
       for (const p of this.players.values()) { this.send(p, { t: "lobby" }); p.pos = null; }
       [...this.players.values()].filter((p) => !p.online).forEach((p) => this.players.delete(p.key));
-      this.deck = []; this.winner = null; this.lobby();
+      this.deck = []; this.winner = null; spaceOn(false); this.lobby();
     };
     document.getElementById("homeBtn").onclick = () => {
       if (!confirm("Tutup room ini? Semua pemain akan terputus.")) return;
@@ -437,8 +442,9 @@
     switch (m.t) {
       case "getready":
         if (m.mode !== "map") { this.mode = "classic"; return false; }
+        spaceOn(true);
         this.mode = "map"; this.inv = []; this.pos = 0; this.score = 0; this.goal = m.goal; this.mrows = [];
-        this.waiting("Balapan Peta! 🗺️", `${m.total} soal · capai petak ${m.goal} 🏁 duluan!<br>✅ Benar +1 · 🔥 HOTS +1 · ⚡ Tercepat +1<br>🎁 3x benar beruntun / benar HOTS = senjata (maks ${MAX_INV})`, "🏁", true);
+        this.waiting("Misi Luar Angkasa! 🚀", `${m.total} soal · terbang duluan ke 🛸 petak ${m.goal}!<br>✅ Benar +1 · 🔥 HOTS +1 · ⚡ Tercepat +1<br>🎁 3x benar beruntun / benar HOTS = senjata (maks ${MAX_INV})`, "🏁", true);
         Sfx.go(); return true;
       case "clue":
         this.mClosePicker(); this.stopTimer && this.stopTimer();
@@ -454,9 +460,15 @@
         Sfx.gong(); return true;
       case "question":
         if (!m.map) return false;
-        this.mode = "map"; this.mQuestion(m); return true;
+        spaceOn(true); this.mode = "map"; this.mQuestion(m); return true;
       case "mresult": this.mResult(m); return true;
       case "mboard": this.mBoardView(m); return true;
+      case "mrows": {
+        this.mrows = m.rows || []; if (m.pos != null) this.pos = m.pos;
+        const mp = document.getElementById("pmap");
+        if (mp && !this._picking) { mp.outerHTML = this.mMapHtml(); this.mBindMap(); }
+        return true;
+      }
       case "inv":
         this.inv = m.inv || []; this.pos = m.pos; this.shield = m.shield; this.clueNext = m.clueNext;
         if (m.used && SKILLS[m.used]) toast(`${SKILLS[m.used].icon} ${SKILLS[m.used].name} dipakai!`);
@@ -477,7 +489,7 @@
         if (m.mode !== "map") return false;
         this.mEnd(m); return true;
       case "lobby":
-        this.mode = "classic"; this.inv = []; this.mClosePicker(); return false;
+        spaceOn(false); this.mode = "classic"; this.inv = []; this.mClosePicker(); return false;
     }
     return false;
   };
@@ -528,6 +540,66 @@
     return `<div class="mprog"><div class="mbar"><span style="width:${pct}%"></span><i style="left:${pct}%">${avHtml(this.av)}</i></div><div class="mlbl"><span>START</span><span>Petak ${this.pos || 0}/${GOAL}</span><span>🏁</span></div></div>`;
   };
 
+  // ----- Peta mini di HP: lihat posisi semua pemain & ketuk lawan untuk menyerang -----
+  const ATTACKS = ["freeze", "bomb"];
+  Player.mHasAttack = function () { return (this.inv || []).some((k) => ATTACKS.includes(k)); };
+  Player.mMapHtml = function () {
+    const rows = this.mrows || [];
+    const occ = new Map();
+    rows.forEach((r) => { const t = Math.max(0, Math.min(GOAL, r.pos || 0)); if (!occ.has(t)) occ.set(t, []); occ.get(t).push(r); });
+    const armed = this.mHasAttack();
+    let html = "";
+    for (let t = 0; t <= GOAL; t++) {
+      const row = Math.floor(t / COLS), ci = t % COLS, col = row % 2 === 0 ? ci : COLS - 1 - ci;
+      const here = occ.get(t) || [];
+      const mine = here.some((r) => r.n === this.name);
+      const foes = here.filter((r) => r.n !== this.name);
+      html += `<button type="button" class="pt${t === 0 ? " start" : ""}${t === GOAL ? " goal" : ""}${mine ? " mine" : ""}${foes.length ? " foe" : ""}${foes.length && armed ? " armed" : ""}" data-t="${t}" style="grid-row:${row + 1};grid-column:${col + 1}"${foes.length ? "" : " tabindex=\"-1\""}>
+        ${SPACE_DECOR[t] ? `<span class="pdecor">${SPACE_DECOR[t]}</span>` : ""}<span class="ptn">${t === 0 ? "🚀" : t === GOAL ? "🛸" : t}</span>
+        <span class="ptoks">${here.slice(0, 3).map((r) => `<span class="ptok${r.n === this.name ? " me" : ""}${r.sh ? " sh" : ""}">${avHtml(r.av)}</span>`).join("")}${here.length > 3 ? `<span class="pmore">+${here.length - 3}</span>` : ""}</span>
+      </button>`;
+    }
+    return `<div class="pmap-wrap" id="pmap">
+      <h3>🗺️ Peta <small>${armed ? "Ketuk lawan untuk menyerang ⚔️" : "Dapatkan ❄️/💣 untuk menyerang"}</small></h3>
+      <div class="pmap" style="grid-template-columns:repeat(${COLS},1fr)">${html}</div>
+    </div>`;
+  };
+  Player.mBindMap = function () {
+    document.querySelectorAll("#pmap .pt.foe").forEach((b) => b.onclick = () => {
+      const t = +b.dataset.t;
+      this.mAttackSheet((this.mrows || []).filter((r) => r.n !== this.name && Math.max(0, Math.min(GOAL, r.pos || 0)) === t));
+    });
+    document.querySelectorAll("#pmap .pt.mine:not(.foe)").forEach((b) => b.onclick = () => toast(`Kamu di petak ${this.pos || 0}. ${GOAL - (this.pos || 0)} petak lagi ke 🏁`));
+  };
+  // Lembar serang: pilih lawan (kalau satu petak berisi beberapa) lalu pilih senjata
+  Player.mAttackSheet = function (targets) {
+    if (!targets.length) return;
+    const weapons = (this.inv || []).map((k, i) => ({ k, i })).filter((w) => ATTACKS.includes(w.k));
+    this.mClosePicker();
+    this._picking = true;
+    const ov = document.createElement("div");
+    ov.className = "picker"; ov.id = "picker";
+    ov.innerHTML = `<div class="picker-card">
+        <h3>⚔️ Serang lawan</h3>
+        ${weapons.length ? `<p class="muted">Pilih senjata untuk menyerang. ${targets.some((r) => r.sh) ? "🛡️ = lawan punya perisai (seranganmu akan tertahan)." : ""}</p>`
+          : `<p class="muted">Kamu belum punya senjata serang. Dapatkan ❄️ Freeze / 💣 Bom dari 3x benar beruntun atau benar soal HOTS.</p>`}
+        <div class="picker-list">${targets.map((r) => `
+          <div class="atk">
+            <div class="atk-who">${avHtml(r.av)} <span class="pkn">${esc(r.n)}</span><small>${r.sh ? "🛡️ " : ""}${r.fz ? "❄️ " : ""}Petak ${r.pos}</small></div>
+            <div class="atk-btns">${weapons.map((w) => `<button class="btn ${w.k === "bomb" ? "accent" : "white"} atk-go" data-k="${esc(r.k)}" data-i="${w.i}" data-w="${w.k}">${SKILLS[w.k].icon} ${SKILLS[w.k].name}</button>`).join("") || `<span class="muted">—</span>`}</div>
+          </div>`).join("")}
+        </div>
+        <button class="btn ghost" id="pkCancel">Tutup</button>
+      </div>`;
+    document.body.appendChild(ov);
+    ov.querySelectorAll(".atk-go").forEach((b) => b.onclick = () => {
+      try { this.conn.send({ t: "skill", i: +b.dataset.i, k: b.dataset.w, target: b.dataset.k }); } catch {}
+      Sfx.tick(); this.mClosePicker();
+    });
+    ov.onclick = (e) => { if (e.target === ov) this.mClosePicker(); };
+    document.getElementById("pkCancel").onclick = () => this.mClosePicker();
+  };
+
   Player.mInvHtml = function () {
     const inv = this.inv || [];
     const slots = [0, 1, 2].map((i) => {
@@ -545,6 +617,8 @@
   Player.mRefreshInv = function () {
     const el = document.getElementById("inv");
     if (el) { el.outerHTML = this.mInvHtml(); this.mBindInv(); }
+    const mp = document.getElementById("pmap");
+    if (mp) { mp.outerHTML = this.mMapHtml(); this.mBindMap(); }
   };
 
   Player.mUse = function (i) {
@@ -584,7 +658,7 @@
     if (me >= 5) show.push(rows[me]);
     return `<div class="lb">${show.map((r) => {
       const i = rows.indexOf(r);
-      return `<div class="lb-row${r.n === this.name ? " me" : ""}"><span class="lb-rank">${i + 1}</span><span class="lb-name">${avHtml(r.av)} ${esc(r.n)}${r.n === this.name ? " · kamu" : ""}</span><span class="mv same">${r.sh ? "🛡️" : ""}${r.fz ? "❄️" : ""}</span><span class="lb-right"><span class="lb-score">${r.pos}</span><small class="lb-gap">petak</small></span></div>`;
+      return `<div class="lb-row${r.n === this.name ? " me" : ""}"${r.n === this.name ? "" : ` data-k="${esc(r.k)}" role="button"`}><span class="lb-rank">${i + 1}</span><span class="lb-name">${avHtml(r.av)} ${esc(r.n)}${r.n === this.name ? " · kamu" : ""}</span><span class="mv same">${r.sh ? "🛡️" : ""}${r.fz ? "❄️" : ""}</span><span class="lb-right"><span class="lb-score">${r.pos}</span><small class="lb-gap">petak</small></span></div>`;
     }).join("")}</div>`;
   };
 
@@ -610,8 +684,9 @@
       </div>
       ${this.mProgress()}
       ${this.mInvHtml()}
+      ${this.mMapHtml()}
       <div class="p-bottom"><span>${avHtml(this.av)} ${esc(this.name)}</span><span class="score-tag">Soal ${m.qn}/${m.nq}</span></div>`);
-    this.mBindInv();
+    this.mBindInv(); this.mBindMap();
     if (m.earned && m.earned.length) { Sfx.fanfare(); try { navigator.vibrate && navigator.vibrate([60, 40, 60, 40, 60]); } catch {} }
     else ok ? Sfx.correct() : Sfx.wrong();
   };
@@ -623,17 +698,18 @@
     render(`
       ${this.mTop(`<span>#${m.rank} dari ${m.total}</span>`)}
       <div class="p-board">
-        <div class="title-pill" style="font-size:20px;align-self:center">🗺️ Peta Balapan</div>
+        <div class="title-pill" style="font-size:20px;align-self:center">🚀 Peta Galaksi</div>
         ${m.winner ? `<div class="earned">🏁 ${esc(m.winner)} sudah finish!</div>` : ""}
         ${m.frozenNext ? `<div class="earned full">❄️ Kamu akan dibekukan di soal berikutnya!</div>` : ""}
-        ${this.mProgress()}
         ${this.mInvHtml()}
+        ${this.mMapHtml()}
         <h3>Posisi <small>Soal ${m.qn}/${m.nq}</small></h3>
         ${this.mRankList(this.mrows)}
-        <p class="foot" style="text-align:center;margin:6px auto 0">Pakai senjata sekarang sebelum soal berikutnya! ⚔️</p>
+        <p class="foot" style="text-align:center;margin:6px auto 0">Ketuk lawan di peta atau di daftar untuk menyerang ⚔️</p>
       </div>
       <div class="p-bottom"><span>${avHtml(this.av)} ${esc(this.name)}</span><span class="score-tag">${this.score}</span></div>`);
-    this.mBindInv();
+    this.mBindInv(); this.mBindMap();
+    document.querySelectorAll(".p-board .lb-row[data-k]").forEach((el) => el.onclick = () => this.mAttackSheet((this.mrows || []).filter((r) => r.k === el.dataset.k)));
   };
 
   Player.mEnd = function (m) {

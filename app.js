@@ -721,20 +721,25 @@
       const fail = (msg) => {
         if (done) return; done = true; clearTimeout(timer);
         try { peer.destroy(); } catch {}
-        toast(msg, 3500); home(pin);
+        this._netRetry = false; toast(msg, 3500); home(pin);
       };
-      const timer = setTimeout(() => fail("Room tidak ditemukan / koneksi lambat. Cek PIN lalu coba lagi."), 25000);
+      const timer = setTimeout(() => fail("Room tidak ditemukan / koneksi lambat. Cek PIN lalu coba lagi."), 45000);
       peer.on("error", (err) => {
         if (err.type === "peer-unavailable") fail("PIN tidak ditemukan 🤔 Pastikan PIN benar & host masih membuka room.");
-        else if (err.type === "network") fail("Tidak bisa terhubung ke server game. Cek internet lalu coba lagi.");
+        else if (err.type === "network") {
+          // Jaringan HP kadang sempat putus sebentar: coba sekali lagi otomatis sebelum menyerah
+          if (!this._netRetry) { this._netRetry = true; done = true; clearTimeout(timer); try { peer.destroy(); } catch {} setTimeout(() => this.connect(pin, auto), 1500); return; }
+          fail("Tidak bisa terhubung ke server game. Cek internet lalu coba lagi.");
+        }
         else if (!this.conn || !this.conn.open) fail("Koneksi gagal. Coba lagi ya.");
       });
+      peer.on("searching", () => { const t = document.querySelector("#app .center p"); if (t) t.textContent = `Mencari room ${pin} di server cadangan…`; });
       peer.on("open", () => {
         const conn = peer.connect(PREFIX + pin, { reliable: true }); this.conn = conn;
         conn.on("open", () => { conn.send({ t: "hello" }); });
         conn.on("data", (msg) => {
           if (msg && msg.t === "room") {
-            done = true; clearTimeout(timer);
+            done = true; clearTimeout(timer); this._netRetry = false;
             const saved = store.get("cq-name-" + pin);
             if (auto && saved) { const s = JSON.parse(saved); this.join(s.name, s.av); }
             else this.nickname();

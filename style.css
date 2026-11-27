@@ -483,3 +483,106 @@ input { font-family: inherit; }
   .board { grid-auto-rows: minmax(60px, 1fr); gap: 5px; }
   .toks { font-size: 13px; }
 }
+
+/* ===== Peta mini di HP (ketuk lawan untuk menyerang) ===== */
+.pmap-wrap { padding: 6px 12px 12px; }
+.pmap-wrap h3 { margin: 0 0 8px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-family: var(--head); font-stretch: 125%; font-size: 15px; text-transform: uppercase; }
+.pmap-wrap h3 small { font-family: var(--body); font-stretch: 100%; text-transform: none; font-size: 11.5px; color: var(--accent); font-weight: 700; text-align: right; }
+.pmap { display: grid; gap: 3px; }
+.pt {
+  position: relative; aspect-ratio: 1; min-width: 0; padding: 2px; background: var(--bg-3); border: 1px solid var(--line); color: var(--muted);
+  display: flex; flex-direction: column; align-items: stretch; cursor: default; clip-path: polygon(5px 0, 100% 0, 100% 100%, 0 100%, 0 5px);
+}
+.ptn { font-size: 9px; font-weight: 800; line-height: 1; text-align: left; }
+.ptoks { flex: 1; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; font-size: 10px; gap: 0 1px; }
+.ptok .avt { margin: .3em 0 0; }
+.ptok.me .avbg { box-shadow: inset 0 0 0 2px var(--fg); }
+.ptok.sh .avbg { outline: 2px solid #3a8bff; }
+.pmore { font-size: 8px; font-weight: 800; }
+.pt.start { background: #1f2a00; }
+.pt.goal { background: var(--accent); color: var(--ink); }
+.pt.mine { border-color: var(--fg); }
+.pt.foe { cursor: pointer; border-color: #555; }
+.pt.foe.armed { border-color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad); animation: armed 1.4s ease-in-out infinite; }
+@keyframes armed { 50% { background: #3a1410; } }
+.pt.foe:active { transform: scale(.94); }
+.lb-row[data-k] { cursor: pointer; }
+.atk { display: flex; flex-direction: column; gap: 8px; background: var(--bg-3); border: 1px solid var(--line); padding: 10px 12px; }
+.atk-who { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; }
+.atk-who .pkn { flex: 1; }
+.atk-who small { color: var(--muted); font-weight: 700; }
+.atk-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.atk-btns .btn { flex: 1; font-size: 15px; padding: 10px 12px; }
+
+/* ===== Tema luar angkasa (mode Balapan Peta) ===== */
+body.space {
+  background-color: #05051a;
+  background-image:
+    radial-gradient(ellipse 60% 45% at 15% 20%, rgba(124, 58, 237, .35), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(14, 165, 233, .28), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 70% 10%, rgba(236, 72, 153, .18), transparent 70%),
+    linear-gradient(180deg, #05051a, #0b0830 60%, #05051a);
+  background-attachment: fixed;
+}
+body.space .bg-shapes { mask-image: none; background-image: none; }
+body.space .bg-shapes::after { display: none; }
+/* bintang: dua lapis titik dengan ukuran berbeda, berkelip pelan */
+body.space .bg-shapes::before {
+  content: ""; position: absolute; inset: -50%;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20px 30px, #fff, transparent),
+    radial-gradient(1px 1px at 120px 80px, #cfe8ff, transparent),
+    radial-gradient(1.5px 1.5px at 200px 160px, #fff, transparent),
+    radial-gradient(1px 1px at 60px 200px, #ffe9c4, transparent),
+    radial-gradient(2px 2px at 160px 20px, #fff, transparent),
+    radial-gradient(1px 1px at 240px 230px, #d9d0ff, transparent);
+  background-size: 260px 260px;
+  animation: twinkle 6s ease-in-out infinite alternate, drift 120s linear infinite;
+  opacity: .8;
+}
+@keyframes twinkle { 50% { opacity: .35; } }
+@keyframes drift { to { transform: translate(260px, 130px); } }
+body.space .shooting { display: none; }
+
+body.space .title-pill { background: linear-gradient(90deg, #e0e7ff, #fff); }
+body.space .p-top { background: rgba(10, 10, 40, .85); border-bottom-color: rgba(120, 140, 255, .25); }
+body.space .answered-list .ap:not(.done):not(.frz) { background: rgba(20, 24, 70, .8); }
+body.space .ans { background: rgba(18, 20, 60, .85); border-color: rgba(120, 140, 255, .3); }
+body.space .ans.right { background: var(--accent); border-color: var(--accent); }
+body.space .fact, body.space .map-side, body.space .lb-row:not(:first-child):not(.me), body.space .mrow:not(.lead), body.space .fd { background: rgba(14, 16, 52, .82); border-color: rgba(120, 140, 255, .25); }
+body.space .q-brain { filter: drop-shadow(0 0 18px rgba(124, 58, 237, .8)); }
+
+/* papan galaksi (host) */
+body.space .board { position: relative; }
+body.space .tile {
+  background: radial-gradient(circle at 30% 25%, rgba(99, 102, 241, .35), rgba(12, 14, 45, .9) 70%);
+  border: 1px solid rgba(129, 140, 248, .45); border-radius: 50% / 46%; clip-path: none;
+  box-shadow: 0 0 14px rgba(99, 102, 241, .25), inset 0 0 12px rgba(0, 0, 0, .5); align-items: center; padding: 6px 4px 4px;
+}
+body.space .tile .tn { color: #c7d2fe; font-size: 12px; }
+body.space .tile .dir { display: none; }
+body.space .tile.cp { border-color: rgba(250, 204, 21, .7); box-shadow: 0 0 16px rgba(250, 204, 21, .3), inset 0 0 12px rgba(0, 0, 0, .5); }
+body.space .tile.cp .tn { color: #fde68a; }
+body.space .tile.start { background: radial-gradient(circle at 50% 30%, rgba(212, 255, 58, .45), rgba(12, 14, 45, .9) 70%); border-color: var(--accent); }
+body.space .tile.start .tn { color: var(--accent); }
+body.space .tile.goal { background: radial-gradient(circle at 50% 35%, #f0abfc, #7c3aed 60%, #2e1065); border-color: #f0abfc; box-shadow: 0 0 30px rgba(240, 171, 252, .7); animation: goalGlow 2s ease-in-out infinite; }
+body.space .tile.goal .tn { color: #fff; text-shadow: 0 0 8px #000; }
+@keyframes goalGlow { 50% { box-shadow: 0 0 46px rgba(240, 171, 252, .95); } }
+.decor { position: absolute; inset: 0; display: grid; place-items: center; font-size: 34px; opacity: .28; pointer-events: none; }
+body:not(.space) .decor, body:not(.space) .pdecor { display: none; }
+body.space .toks { justify-content: center; position: relative; }
+
+/* peta galaksi di HP */
+body.space .pt {
+  background: radial-gradient(circle at 30% 25%, rgba(99, 102, 241, .35), rgba(12, 14, 45, .92) 70%);
+  border: 1px solid rgba(129, 140, 248, .4); border-radius: 50%; clip-path: none; color: #c7d2fe; align-items: center;
+}
+body.space .pt .ptn { text-align: center; }
+body.space .pt.start { background: radial-gradient(circle, rgba(212, 255, 58, .5), rgba(12, 14, 45, .9) 70%); border-color: var(--accent); }
+body.space .pt.goal { background: radial-gradient(circle at 50% 35%, #f0abfc, #7c3aed 65%); border-color: #f0abfc; color: #fff; }
+body.space .pt.mine { border: 2px solid #fff; box-shadow: 0 0 10px rgba(255, 255, 255, .6); }
+body.space .pt.foe.armed { border-color: var(--bad); box-shadow: 0 0 10px rgba(255, 90, 71, .8); }
+.pdecor { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; opacity: .3; pointer-events: none; }
+.pt { overflow: visible; }
+body.space .slot.empty { border-color: rgba(129, 140, 248, .35); }
+body.space .clue-box { border-left-color: #a78bfa; }
