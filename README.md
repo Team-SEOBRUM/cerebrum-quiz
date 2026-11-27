@@ -14,7 +14,8 @@ Ada juga **🎯 Main Solo** untuk latihan sendiri tanpa PIN.
 
 ## Mode game
 Saat klik **Jadi Host**, pilih salah satu:
-- **🏆 Quiz Interaktif** — 3 sesi kejar-kejaran poin (×1 → ×1.5 → ×2), papan peringkat tiap soal.
+- **🏆 Quiz Interaktif** — 4 sesi bertopik × 15 soal (bisa 5/10/15), tiap sesi soal baru & juara 1-2-3 sendiri, lalu juara umum:
+  1. 🧠 Product Knowledge · 2. 🎓 UTBK · 3. 🏛️ CPNS · 4. 🔎 SEO. Soal diatur lewat field `cat` di `questions.js` (pk/utbk/cpns/seo).
 - **🗺️ Balapan Peta** — 30 soal (22 reguler + 8 HOTS). Pemain berjalan di peta 40 petak; pertama sampai 🏁 menang.
   - Benar +1 petak · soal HOTS +1 · penjawab benar tercepat +1.
   - Soal HOTS selalu didahului layar **clue**. Bank soal HOTS ada di `questions-hots.js`.

@@ -586,3 +586,10 @@ body.space .pt.foe.armed { border-color: var(--bad); box-shadow: 0 0 10px rgba(2
 .pt { overflow: visible; }
 body.space .slot.empty { border-color: rgba(129, 140, 248, .35); }
 body.space .clue-box { border-left-color: #a78bfa; }
+
+/* Juara tiap sesi (layar akhir Quiz Interaktif) */
+.champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; width: 100%; max-width: 900px; }
+.champ { display: flex; flex-direction: column; gap: 4px; background: var(--bg-3); border: 1px solid var(--line); padding: 10px 12px; text-align: left; }
+.champ b { font-family: var(--head); font-stretch: 112%; font-size: 14px; text-transform: uppercase; color: var(--accent); }
+.champ span { font-weight: 700; font-size: 15px; }
+.champ .avt { font-size: 15px; }
